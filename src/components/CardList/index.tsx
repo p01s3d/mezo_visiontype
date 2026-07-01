@@ -2,15 +2,21 @@ import { DataCardWithCircle } from './DataCardWithCircle';
 import { RecurringBuyCard } from './RecurringBuyCard';
 import { ETHStakingCard } from './ETHStakingCard';
 import { Divider, VStack } from '@coinbase/cds-web/layout';
+import type { YieldPool } from '../../api/defillama';
 
-export const CardList = () => {
+type CardListProps = {
+  pools: YieldPool[];
+  loading: boolean;
+};
+
+export const CardList = ({ pools, loading }: CardListProps) => {
   return (
     <VStack gap={2}>
-      <RecurringBuyCard />
+      <RecurringBuyCard pools={pools} loading={loading} />
       <Divider />
-      <DataCardWithCircle />
+      <DataCardWithCircle pools={pools} loading={loading} />
       <Divider />
-      <ETHStakingCard />
+      <ETHStakingCard pools={pools} loading={loading} />
     </VStack>
   );
 };

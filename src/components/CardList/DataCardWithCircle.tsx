@@ -4,21 +4,34 @@ import { ProgressCircle } from '@coinbase/cds-web/visualizations';
 import { Text } from '@coinbase/cds-web/typography';
 import { upsellCardDefaultWidth } from '@coinbase/cds-common/tokens/card';
 import { Icon } from '@coinbase/cds-web/icons';
+import type { YieldPool } from '../../api/defillama';
+import { getAverageApy } from '../../utils/defiViews';
 
-export const DataCardWithCircle = () => {
-  const progress = 0.72;
+type DataCardWithCircleProps = {
+  pools: YieldPool[];
+  loading: boolean;
+};
+
+export const DataCardWithCircle = ({ pools, loading }: DataCardWithCircleProps) => {
+  const averageApy = getAverageApy(pools);
+  const progress = Math.min(averageApy / 20, 1);
+
   return (
     <Card width={upsellCardDefaultWidth}>
       <CardBody
         paddingX={2}
-        title="Portfolio yield"
-        description="Your weighted average APY across active positions"
+        title="Market average APY"
+        description="Weighted average across top pools by TVL (live)"
         media={
-          <ProgressCircle
-            progress={progress}
-            size={100}
-            contentNode={<Text font="title4">{progress * 100}%</Text>}
-          />
+          loading ? (
+            <ProgressCircle indeterminate size={100} />
+          ) : (
+            <ProgressCircle
+              progress={progress}
+              size={100}
+              contentNode={<Text font="title4">{averageApy.toFixed(1)}%</Text>}
+            />
+          )
         }
       />
       <CardFooter paddingX={2}>

@@ -10,6 +10,8 @@ import { AssetList } from './components/AssetList';
 import { CDSLogo } from './components/CDSLogo';
 import { CardList } from './components/CardList';
 import { SearchInput } from '@coinbase/cds-web/controls';
+import { useDefiData } from './hooks/useDefiData';
+import { NAV_VIEWS } from './utils/defiViews';
 
 const navItems = [
   {
@@ -48,6 +50,8 @@ export const App = () => {
   const activeNavItem = navItems[activeNavIndex];
 
   const [activeColorScheme, setActiveColorScheme] = useState<ColorScheme>('light');
+  const { pools, protocols, loading, error, updatedAt, refresh } = useDefiData();
+  const activeView = NAV_VIEWS[activeNavIndex];
 
   const toggleColorScheme = () => setActiveColorScheme((s) => (s === 'light' ? 'dark' : 'light'));
 
@@ -61,7 +65,10 @@ export const App = () => {
                 key={title}
                 active={index === activeNavIndex}
                 icon={icon}
-                onClick={() => setActiveNavIndex(index)}
+                onClick={() => {
+                  setActiveNavIndex(index);
+                  setSearch('');
+                }}
                 title={title}
               />
             ))}
@@ -80,12 +87,22 @@ export const App = () => {
                   />
                 </Box>
                 <Box paddingX={2} width="100%">
-                  <AssetList pageSize={5} />
+                  <AssetList
+                    view={activeView}
+                    search={search}
+                    pools={pools}
+                    protocols={protocols}
+                    loading={loading}
+                    error={error}
+                    updatedAt={updatedAt}
+                    onRefresh={refresh}
+                    pageSize={5}
+                  />
                 </Box>
               </VStack>
               <Divider direction="vertical" />
               <Box paddingX={3} paddingY={2}>
-                <CardList />
+                <CardList pools={pools} loading={loading} />
               </Box>
             </HStack>
           </VStack>
