@@ -4,18 +4,24 @@ import { Text } from '@coinbase/cds-web/typography';
 import { Icon } from '@coinbase/cds-web/icons';
 import { formatEther } from 'viem';
 import { useBalance, useConnection } from 'wagmi';
+import type { WalletToken } from '../../api/debank';
 import { truncateAddress } from '../../utils/wallet';
 import { formatUsd } from '../../utils/format';
+import { formatTokenAmount } from '../../utils/tokenHoldings';
 
 type WalletSummaryProps = {
   totalBalanceUsd: number | null;
   positionCount: number;
+  tokenCount: number;
+  topToken: WalletToken | null;
   personalLoading: boolean;
 };
 
 export const WalletSummary = ({
   totalBalanceUsd,
   positionCount,
+  tokenCount,
+  topToken,
   personalLoading,
 }: WalletSummaryProps) => {
   const { address, isConnected, chain } = useConnection();
@@ -56,7 +62,7 @@ export const WalletSummary = ({
         </HStack>
         <HStack alignItems="center" justifyContent="space-between">
           <Text font="label2" color="fgMuted">
-            DeFi net worth
+            Total net worth
           </Text>
           <Text font="title3">
             {personalLoading || totalBalanceUsd === null ? '…' : formatUsd(totalBalanceUsd)}
@@ -64,10 +70,26 @@ export const WalletSummary = ({
         </HStack>
         <HStack alignItems="center" justifyContent="space-between">
           <Text font="label2" color="fgMuted">
-            Positions
+            Tokens
+          </Text>
+          <Text font="title3">{personalLoading ? '…' : tokenCount}</Text>
+        </HStack>
+        <HStack alignItems="center" justifyContent="space-between">
+          <Text font="label2" color="fgMuted">
+            DeFi positions
           </Text>
           <Text font="title3">{personalLoading ? '…' : positionCount}</Text>
         </HStack>
+        {topToken ? (
+          <HStack alignItems="center" justifyContent="space-between">
+            <Text font="label2" color="fgMuted">
+              Top holding
+            </Text>
+            <Text font="title3">
+              {formatTokenAmount(topToken.amount)} {topToken.symbol}
+            </Text>
+          </HStack>
+        ) : null}
       </VStack>
     </Card>
   );

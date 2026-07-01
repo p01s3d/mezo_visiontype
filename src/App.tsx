@@ -58,6 +58,7 @@ export const App = () => {
   const { pools, protocols, loading, error, updatedAt, refresh } = useDefiData();
   const {
     positions: personalPositions,
+    tokens: walletTokens,
     totalBalanceUsd,
     loading: personalLoading,
     error: personalError,
@@ -112,6 +113,13 @@ export const App = () => {
                         </Button>
                         <Button
                           compact
+                          onClick={() => setDataSource('tokens')}
+                          variant={dataSource === 'tokens' ? 'primary' : 'secondary'}
+                        >
+                          Tokens
+                        </Button>
+                        <Button
+                          compact
                           onClick={() => setDataSource('market')}
                           variant={dataSource === 'market' ? 'primary' : 'secondary'}
                         >
@@ -124,9 +132,11 @@ export const App = () => {
                       accessibilityLabel="Search"
                       onChangeText={setSearch}
                       placeholder={
-                        dataSource === 'personal'
-                          ? 'Search your positions'
-                          : 'Search positions and protocols'
+                        dataSource === 'tokens'
+                          ? 'Search your tokens'
+                          : dataSource === 'personal'
+                            ? 'Search your positions'
+                            : 'Search positions and protocols'
                       }
                       value={search}
                     />
@@ -140,6 +150,7 @@ export const App = () => {
                     pools={pools}
                     protocols={protocols}
                     personalPositions={personalPositions}
+                    walletTokens={walletTokens}
                     loading={loading}
                     personalLoading={personalLoading}
                     error={error}
@@ -160,6 +171,8 @@ export const App = () => {
                   loading={loading}
                   totalBalanceUsd={totalBalanceUsd}
                   positionCount={personalPositions.length}
+                  tokenCount={walletTokens.length}
+                  topToken={walletTokens[0] ?? null}
                   personalLoading={personalLoading}
                 />
               </Box>

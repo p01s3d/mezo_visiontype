@@ -15,7 +15,7 @@ import { ProgressCircle } from '@coinbase/cds-web/visualizations';
 import { useEffect, useMemo, useState } from 'react';
 import { Icon } from '@coinbase/cds-web/icons';
 import { Pagination } from '@coinbase/cds-web/pagination/Pagination';
-import type { PersonalPosition } from '../../api/debank';
+import type { PersonalPosition, WalletToken } from '../../api/debank';
 import type { Protocol, YieldPool } from '../../api/defillama';
 import { formatApy, formatPercentChange, formatUsd } from '../../utils/format';
 import { filterPools, filterProtocols, type DataView } from '../../utils/defiViews';
@@ -23,8 +23,9 @@ import {
   getPersonalRowCount,
   PersonalPositionsTable,
 } from './PersonalPositionsTable';
+import { getTokenRowCount, TokenHoldingsTable } from './TokenHoldingsTable';
 
-export type DataSource = 'market' | 'personal';
+export type DataSource = 'market' | 'personal' | 'tokens';
 
 type AssetListProps = {
   dataSource: DataSource;
@@ -33,6 +34,7 @@ type AssetListProps = {
   pools: YieldPool[];
   protocols: Protocol[];
   personalPositions: PersonalPosition[];
+  walletTokens: WalletToken[];
   loading: boolean;
   personalLoading: boolean;
   error: string | null;
@@ -52,6 +54,7 @@ export const AssetList = ({
   pools,
   protocols,
   personalPositions,
+  walletTokens,
   loading,
   personalLoading,
   error,
@@ -65,7 +68,9 @@ export const AssetList = ({
 }: AssetListProps) => {
   const [activePage, setActivePage] = useState(1);
   const isPersonal = dataSource === 'personal';
-  const isProtocolView = view === 'protocols';
+  const isTokens = dataSource === 'tokens';
+  const isWalletData = isPersonal || isTokens;
+  const isProtocolView = view === 'protocols' && isPersonal;
 
   useEffect(() => {
     setActivePage(1);
@@ -75,16 +80,18 @@ export const AssetList = ({
     return isProtocolView ? filterProtocols(protocols, search) : filterPools(pools, view, search);
   }, [isProtocolView, protocols, pools, search, view]);
 
-  const rowCount = isPersonal
-    ? getPersonalRowCount(view, search, personalPositions)
-    : marketRows.length;
+  const rowCount = isTokens
+    ? getTokenRowCount(walletTokens, search)
+    : isPersonal
+      ? getPersonalRowCount(view, search, personalPositions)
+      : marketRows.length;
 
   const totalPages = Math.max(1, Math.ceil(rowCount / pageSize));
   const currentPage = Math.min(activePage, totalPages);
   const startIndex = (currentPage - 1) * pageSize;
   const pageRows = isPersonal ? [] : marketRows.slice(startIndex, startIndex + pageSize);
 
-  if (isPersonal && missingApiKey) {
+  if (isWalletData && missingApiKey) {
     return (
       <Banner variant="warning" title="DeBank API key required" startIcon="info">
         Add your access key to `.env` as `VITE_DEBANK_ACCESS_KEY`. Get a free key at
@@ -93,17 +100,17 @@ export const AssetList = ({
     );
   }
 
-  const isLoading = isPersonal ? personalLoading : loading;
-  const activeError = isPersonal ? personalError : error;
-  const activeUpdatedAt = isPersonal ? personalUpdatedAt : updatedAt;
-  const onActiveRefresh = isPersonal ? onRefreshPersonal : onRefresh;
+  const isLoading = isWalletData ? personalLoading : loading;
+  const activeError = isWalletData ? personalError : error;
+  const activeUpdatedAt = isWalletData ? personalUpdatedAt : updatedAt;
+  const onActiveRefresh = isWalletData ? onRefreshPersonal : onRefresh;
 
   if (isLoading) {
     return (
       <VStack alignItems="center" gap={2} paddingY={6}>
         <ProgressCircle indeterminate size={48} />
         <Text font="label2" color="fgMuted">
-          {isPersonal ? 'Loading your DeFi positions…' : 'Loading live protocol data…'}
+          {isPersonal ? 'Loading your DeFi positions…' : isTokens ? 'Loading your token holdings…' : 'Loading live protocol data…'}
         </Text>
       </VStack>
     );
@@ -113,7 +120,7 @@ export const AssetList = ({
     return (
       <Banner
         variant="error"
-        title={isPersonal ? 'Unable to load wallet positions' : 'Unable to load live data'}
+        title={isTokens ? 'Unable to load token holdings' : isPersonal ? 'Unable to load wallet positions' : 'Unable to load live data'}
         startIcon="warning"
         primaryAction={<Button onClick={onActiveRefresh}>Retry</Button>}
       >
@@ -126,8 +133,17 @@ export const AssetList = ({
     <VStack gap={2} width="100%">
       <HStack alignItems="center" justifyContent="space-between" paddingX={1}>
         <Text font="label2" color="fgMuted">
-          {rowCount} {isPersonal ? (isProtocolView ? 'protocols' : 'positions') : isProtocolView ? 'protocols' : 'pools'} ·{' '}
-          {isPersonal ? 'DeBank' : 'DefiLlama'}
+          {rowCount}{' '}
+          {isTokens
+            ? 'tokens'
+            : isPersonal
+              ? isProtocolView
+                ? 'protocols'
+                : 'positions'
+              : isProtocolView
+                ? 'protocols'
+                : 'pools'}{' '}
+          · {isWalletData ? 'DeBank' : 'DefiLlama'}
           {activeUpdatedAt ? ` · Updated ${activeUpdatedAt.toLocaleTimeString()}` : ''}
         </Text>
         <Button compact variant="secondary" onClick={onActiveRefresh}>
@@ -135,7 +151,15 @@ export const AssetList = ({
         </Button>
       </HStack>
 
-      {isPersonal ? (
+      {isTokens ? (
+        <TokenHoldingsTable
+          tokens={walletTokens}
+          search={search}
+          pageSize={pageSize}
+          activePage={currentPage}
+          onPageChange={setActivePage}
+        />
+      ) : isPersonal ? (
         <PersonalPositionsTable
           view={view}
           search={search}
@@ -262,9 +286,11 @@ export const AssetList = ({
       {rowCount === 0 ? (
         <Box paddingY={4}>
           <Text font="label2" color="fgMuted" textAlign="center">
-            {isPersonal
-              ? 'No DeFi positions found for this wallet.'
-              : 'No results match your search.'}
+            {isTokens
+              ? 'No token holdings found for this wallet.'
+              : isPersonal
+                ? 'No DeFi positions found for this wallet.'
+                : 'No results match your search.'}
           </Text>
         </Box>
       ) : null}

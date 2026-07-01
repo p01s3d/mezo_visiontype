@@ -2,14 +2,18 @@ import { useCallback, useEffect, useState } from 'react';
 import type { Address } from 'viem';
 import {
   fetchWalletProtocolPositions,
+  fetchWalletTokens,
   fetchWalletTotalBalance,
   flattenProtocolPositions,
   hasDebankAccessKey,
+  normalizeWalletTokens,
   type PersonalPosition,
+  type WalletToken,
 } from '../api/debank';
 
 type WalletPositionsState = {
   positions: PersonalPosition[];
+  tokens: WalletToken[];
   totalBalanceUsd: number | null;
   loading: boolean;
   error: string | null;
@@ -20,6 +24,7 @@ type WalletPositionsState = {
 
 export function useWalletPositions(address: Address | undefined): WalletPositionsState {
   const [positions, setPositions] = useState<PersonalPosition[]>([]);
+  const [tokens, setTokens] = useState<WalletToken[]>([]);
   const [totalBalanceUsd, setTotalBalanceUsd] = useState<number | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -29,6 +34,7 @@ export function useWalletPositions(address: Address | undefined): WalletPosition
   const load = useCallback(async () => {
     if (!address) {
       setPositions([]);
+      setTokens([]);
       setTotalBalanceUsd(null);
       setError(null);
       setMissingApiKey(!hasDebankAccessKey());
@@ -38,6 +44,7 @@ export function useWalletPositions(address: Address | undefined): WalletPosition
     if (!hasDebankAccessKey()) {
       setMissingApiKey(true);
       setPositions([]);
+      setTokens([]);
       setTotalBalanceUsd(null);
       setError(null);
       return;
@@ -48,21 +55,24 @@ export function useWalletPositions(address: Address | undefined): WalletPosition
     setMissingApiKey(false);
 
     try {
-      const [protocols, totalBalance] = await Promise.all([
+      const [protocols, totalBalance, rawTokens] = await Promise.all([
         fetchWalletProtocolPositions(address),
         fetchWalletTotalBalance(address),
+        fetchWalletTokens(address),
       ]);
 
       setPositions(flattenProtocolPositions(protocols));
+      setTokens(normalizeWalletTokens(rawTokens));
       setTotalBalanceUsd(totalBalance.total_usd_value);
       setUpdatedAt(new Date());
     } catch (err) {
       if (err instanceof Error && err.message === 'MISSING_API_KEY') {
         setMissingApiKey(true);
         setPositions([]);
+        setTokens([]);
         setTotalBalanceUsd(null);
       } else {
-        setError(err instanceof Error ? err.message : 'Failed to load wallet positions');
+        setError(err instanceof Error ? err.message : 'Failed to load wallet data');
       }
     } finally {
       setLoading(false);
@@ -75,6 +85,7 @@ export function useWalletPositions(address: Address | undefined): WalletPosition
 
   return {
     positions,
+    tokens,
     totalBalanceUsd,
     loading,
     error,

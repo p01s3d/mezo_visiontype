@@ -1,7 +1,29 @@
 export type DebankToken = {
+  id: string;
+  chain: string;
+  name: string | null;
+  symbol: string | null;
+  display_symbol: string | null;
+  optimized_symbol: string | null;
+  decimals: number | null;
+  logo_url: string | null;
+  price: number;
+  is_core: boolean;
+  is_wallet: boolean;
+  amount: number;
+  raw_amount: number;
+};
+
+export type WalletToken = {
+  id: string;
+  chain: string;
+  name: string;
   symbol: string;
   amount: number;
   price: number;
+  valueUsd: number;
+  logoUrl: string | null;
+  isCore: boolean;
 };
 
 export type DebankPortfolioItem = {
@@ -91,6 +113,30 @@ export async function fetchWalletProtocolPositions(
 
 export async function fetchWalletTotalBalance(address: string): Promise<DebankTotalBalance> {
   return debankFetch<DebankTotalBalance>(`/user/total_balance?id=${address}`);
+}
+
+export async function fetchWalletTokens(address: string): Promise<DebankToken[]> {
+  return debankFetch<DebankToken[]>(
+    `/user/all_token_list?id=${address}&is_all=false`,
+  );
+}
+
+export function normalizeWalletTokens(tokens: DebankToken[]): WalletToken[] {
+  return tokens
+    .filter((token) => token.amount > 0)
+    .map((token) => ({
+      id: `${token.chain}-${token.id}`,
+      chain: token.chain,
+      name: token.name ?? token.symbol ?? 'Unknown',
+      symbol: token.optimized_symbol ?? token.display_symbol ?? token.symbol ?? '???',
+      amount: token.amount,
+      price: token.price,
+      valueUsd: token.amount * token.price,
+      logoUrl: token.logo_url,
+      isCore: token.is_core,
+    }))
+    .filter((token) => token.isCore || token.valueUsd >= 0.01)
+    .sort((a, b) => b.valueUsd - a.valueUsd);
 }
 
 export function flattenProtocolPositions(

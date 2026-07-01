@@ -3,6 +3,7 @@ import { RecurringBuyCard } from './RecurringBuyCard';
 import { ETHStakingCard } from './ETHStakingCard';
 import { WalletSummary } from './WalletSummary';
 import { Divider, VStack } from '@coinbase/cds-web/layout';
+import type { WalletToken } from '../../api/debank';
 import type { YieldPool } from '../../api/defillama';
 
 type CardListProps = {
@@ -10,6 +11,8 @@ type CardListProps = {
   loading: boolean;
   totalBalanceUsd: number | null;
   positionCount: number;
+  tokenCount: number;
+  topToken: WalletToken | null;
   personalLoading: boolean;
 };
 
@@ -18,6 +21,8 @@ export const CardList = ({
   loading,
   totalBalanceUsd,
   positionCount,
+  tokenCount,
+  topToken,
   personalLoading,
 }: CardListProps) => {
   return (
@@ -25,6 +30,8 @@ export const CardList = ({
       <WalletSummary
         totalBalanceUsd={totalBalanceUsd}
         positionCount={positionCount}
+        tokenCount={tokenCount}
+        topToken={topToken}
         personalLoading={personalLoading}
       />
       <Divider />
