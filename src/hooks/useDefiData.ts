@@ -42,6 +42,14 @@ export function useDefiData(): DefiDataState {
     void load();
   }, [load]);
 
+  useEffect(() => {
+    const interval = window.setInterval(() => {
+      void load();
+    }, 5 * 60 * 1000);
+
+    return () => window.clearInterval(interval);
+  }, [load]);
+
   return {
     pools,
     protocols,
