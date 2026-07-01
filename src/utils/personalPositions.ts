@@ -1,17 +1,22 @@
-import type { PersonalPosition } from '../api/debank';
+import type { PersonalPosition } from '../api/walletTypes';
 import type { DataView } from './defiViews';
 
 const CHAIN_LABELS: Record<string, string> = {
+  ethereum: 'Ethereum',
+  arbitrum: 'Arbitrum',
+  base: 'Base',
+  optimism: 'Optimism',
+  polygon: 'Polygon',
+  'binance-smart-chain': 'BNB Chain',
   eth: 'Ethereum',
   arb: 'Arbitrum',
-  base: 'Base',
   op: 'Optimism',
   matic: 'Polygon',
   bsc: 'BNB Chain',
 };
 
 export function formatChain(chain: string): string {
-  return CHAIN_LABELS[chain] ?? chain.toUpperCase();
+  return CHAIN_LABELS[chain] ?? chain.replace(/-/g, ' ');
 }
 
 function matchesSearch(...values: string[]): (search: string) => boolean {
@@ -31,20 +36,31 @@ export function filterPersonalPositions(
 
   switch (view) {
     case 'staking':
-      filtered = positions.filter((position) => /stak|vest|lock/i.test(position.name));
+      filtered = positions.filter(
+        (position) =>
+          /stak|vest|lock/i.test(position.positionType) || /stak|vest|lock/i.test(position.name),
+      );
       break;
     case 'liquidity':
-      filtered = positions.filter((position) =>
-        /liquidity|farming|pool|lp|amm/i.test(position.name),
+      filtered = positions.filter(
+        (position) =>
+          /liquidity|farming|pool|lp|amm/i.test(position.positionType) ||
+          /liquidity|farming|pool|lp|amm/i.test(position.name),
       );
       break;
     case 'yield':
-      filtered = positions.filter((position) =>
-        /lend|supply|deposit|earn|vault/i.test(position.name),
+      filtered = positions.filter(
+        (position) =>
+          /lend|supply|deposit|earn|vault|farming/i.test(position.positionType) ||
+          /lend|supply|deposit|earn|vault/i.test(position.name),
       );
       break;
     case 'swap':
-      filtered = positions.filter((position) => /swap|dex|trading/i.test(position.name));
+      filtered = positions.filter(
+        (position) =>
+          /swap|dex|trading/i.test(position.positionType) ||
+          /swap|dex|trading/i.test(position.name),
+      );
       break;
     default:
       break;

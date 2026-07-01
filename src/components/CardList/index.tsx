@@ -3,7 +3,7 @@ import { RecurringBuyCard } from './RecurringBuyCard';
 import { ETHStakingCard } from './ETHStakingCard';
 import { WalletSummary } from './WalletSummary';
 import { Divider, VStack } from '@coinbase/cds-web/layout';
-import type { WalletToken } from '../../api/debank';
+import type { WalletToken } from '../../api/walletTypes';
 import type { YieldPool } from '../../api/defillama';
 
 type CardListProps = {

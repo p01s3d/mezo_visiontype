@@ -8,7 +8,7 @@ import {
 } from '@coinbase/cds-web/tables';
 import { Icon } from '@coinbase/cds-web/icons';
 import { Pagination } from '@coinbase/cds-web/pagination/Pagination';
-import type { WalletToken } from '../../api/debank';
+import type { WalletToken } from '../../api/walletTypes';
 import { formatUsd } from '../../utils/format';
 import { filterWalletTokens, formatTokenAmount } from '../../utils/tokenHoldings';
 import { formatChain } from '../../utils/personalPositions';

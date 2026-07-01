@@ -15,7 +15,7 @@ import { ProgressCircle } from '@coinbase/cds-web/visualizations';
 import { useEffect, useMemo, useState } from 'react';
 import { Icon } from '@coinbase/cds-web/icons';
 import { Pagination } from '@coinbase/cds-web/pagination/Pagination';
-import type { PersonalPosition, WalletToken } from '../../api/debank';
+import type { PersonalPosition, WalletToken } from '../../api/walletTypes';
 import type { Protocol, YieldPool } from '../../api/defillama';
 import { formatApy, formatPercentChange, formatUsd } from '../../utils/format';
 import { filterPools, filterProtocols, type DataView } from '../../utils/defiViews';
@@ -40,6 +40,7 @@ type AssetListProps = {
   error: string | null;
   personalError: string | null;
   missingApiKey: boolean;
+  apiKeyIssue: 'missing' | 'empty' | null;
   updatedAt: Date | null;
   personalUpdatedAt: Date | null;
   onRefresh: () => void;
@@ -60,6 +61,7 @@ export const AssetList = ({
   error,
   personalError,
   missingApiKey,
+  apiKeyIssue,
   updatedAt,
   personalUpdatedAt,
   onRefresh,
@@ -93,9 +95,10 @@ export const AssetList = ({
 
   if (isWalletData && missingApiKey) {
     return (
-      <Banner variant="warning" title="DeBank API key required" startIcon="info">
-        Add your access key to `.env` as `VITE_DEBANK_ACCESS_KEY`. Get a free key at
-        cloud.debank.com, then restart the dev server.
+      <Banner variant="warning" title="Zerion API key required" startIcon="info">
+        {apiKeyIssue === 'empty'
+          ? 'Your `.env` has `VITE_ZERION_API_KEY` but the value is empty. Paste your key from dashboard.zerion.io, save, then restart the dev server.'
+          : 'Add your API key to `.env` as `VITE_ZERION_API_KEY`. Get a free key at dashboard.zerion.io, then restart the dev server.'}
       </Banner>
     );
   }
@@ -143,7 +146,7 @@ export const AssetList = ({
               : isProtocolView
                 ? 'protocols'
                 : 'pools'}{' '}
-          · {isWalletData ? 'DeBank' : 'DefiLlama'}
+          · {isWalletData ? 'Zerion' : 'DefiLlama'}
           {activeUpdatedAt ? ` · Updated ${activeUpdatedAt.toLocaleTimeString()}` : ''}
         </Text>
         <Button compact variant="secondary" onClick={onActiveRefresh}>

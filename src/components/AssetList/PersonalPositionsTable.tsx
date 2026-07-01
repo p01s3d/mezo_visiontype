@@ -8,8 +8,8 @@ import {
 } from '@coinbase/cds-web/tables';
 import { Icon } from '@coinbase/cds-web/icons';
 import { Pagination } from '@coinbase/cds-web/pagination/Pagination';
-import type { PersonalPosition } from '../../api/debank';
-import { summarizeByProtocol } from '../../api/debank';
+import type { PersonalPosition } from '../../api/walletTypes';
+import { summarizeByProtocol } from '../../api/zerion';
 import { formatUsd } from '../../utils/format';
 import { formatChain } from '../../utils/personalPositions';
 import type { DataView } from '../../utils/defiViews';

@@ -1,4 +1,4 @@
-import type { WalletToken } from '../api/debank';
+import type { WalletToken } from '../api/walletTypes';
 import { formatChain } from './personalPositions';
 
 export function formatTokenAmount(amount: number): string {

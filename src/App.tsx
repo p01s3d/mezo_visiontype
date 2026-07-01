@@ -63,9 +63,10 @@ export const App = () => {
     loading: personalLoading,
     error: personalError,
     missingApiKey,
+    apiKeyIssue,
     updatedAt: personalUpdatedAt,
     refresh: refreshPersonal,
-  } = useWalletPositions(address);
+  } = useWalletPositions(address, dataSource);
   const activeView = NAV_VIEWS[activeNavIndex];
 
   useEffect(() => {
@@ -156,6 +157,7 @@ export const App = () => {
                     error={error}
                     personalError={personalError}
                     missingApiKey={missingApiKey}
+                    apiKeyIssue={apiKeyIssue}
                     updatedAt={updatedAt}
                     personalUpdatedAt={personalUpdatedAt}
                     onRefresh={refresh}

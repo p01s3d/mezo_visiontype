@@ -4,7 +4,7 @@ import { Text } from '@coinbase/cds-web/typography';
 import { Icon } from '@coinbase/cds-web/icons';
 import { formatEther } from 'viem';
 import { useBalance, useConnection } from 'wagmi';
-import type { WalletToken } from '../../api/debank';
+import type { WalletToken } from '../../api/walletTypes';
 import { truncateAddress } from '../../utils/wallet';
 import { formatUsd } from '../../utils/format';
 import { formatTokenAmount } from '../../utils/tokenHoldings';
