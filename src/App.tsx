@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import type { ColorScheme } from '@coinbase/cds-common';
 import { ThemeProvider } from '@coinbase/cds-web';
 import { defaultTheme } from '@coinbase/cds-web/themes/defaultTheme';
@@ -6,12 +6,15 @@ import { Box, Divider, HStack, VStack } from '@coinbase/cds-web/layout';
 import { Sidebar, SidebarItem } from '@coinbase/cds-web/navigation';
 import { MediaQueryProvider } from '@coinbase/cds-web/system';
 import { Navbar } from './components/Navbar';
-import { AssetList } from './components/AssetList';
+import { AssetList, type DataSource } from './components/AssetList';
 import { CDSLogo } from './components/CDSLogo';
 import { CardList } from './components/CardList';
 import { SearchInput } from '@coinbase/cds-web/controls';
+import { Button, ButtonGroup } from '@coinbase/cds-web/buttons';
 import { useDefiData } from './hooks/useDefiData';
+import { useWalletPositions } from './hooks/useWalletPositions';
 import { NAV_VIEWS } from './utils/defiViews';
+import { useConnection } from 'wagmi';
 
 const navItems = [
   {
@@ -47,11 +50,30 @@ const navItems = [
 export const App = () => {
   const [activeNavIndex, setActiveNavIndex] = useState(0);
   const [search, setSearch] = useState('');
+  const [dataSource, setDataSource] = useState<DataSource>('market');
   const activeNavItem = navItems[activeNavIndex];
 
   const [activeColorScheme, setActiveColorScheme] = useState<ColorScheme>('light');
+  const { address, isConnected } = useConnection();
   const { pools, protocols, loading, error, updatedAt, refresh } = useDefiData();
+  const {
+    positions: personalPositions,
+    totalBalanceUsd,
+    loading: personalLoading,
+    error: personalError,
+    missingApiKey,
+    updatedAt: personalUpdatedAt,
+    refresh: refreshPersonal,
+  } = useWalletPositions(address);
   const activeView = NAV_VIEWS[activeNavIndex];
+
+  useEffect(() => {
+    if (isConnected) {
+      setDataSource('personal');
+    } else {
+      setDataSource('market');
+    }
+  }, [isConnected]);
 
   const toggleColorScheme = () => setActiveColorScheme((s) => (s === 'light' ? 'dark' : 'light'));
 
@@ -78,31 +100,68 @@ export const App = () => {
             <HStack width="100%">
               <VStack width={{ base: 500, desktop: 660 }}>
                 <Box padding={2}>
-                  <SearchInput
-                    compact
-                    accessibilityLabel="Search"
-                    onChangeText={setSearch}
-                    placeholder="Search positions and protocols"
-                    value={search}
-                  />
+                  <VStack gap={2}>
+                    {isConnected ? (
+                      <ButtonGroup accessibilityLabel="Data source">
+                        <Button
+                          compact
+                          onClick={() => setDataSource('personal')}
+                          variant={dataSource === 'personal' ? 'primary' : 'secondary'}
+                        >
+                          My positions
+                        </Button>
+                        <Button
+                          compact
+                          onClick={() => setDataSource('market')}
+                          variant={dataSource === 'market' ? 'primary' : 'secondary'}
+                        >
+                          Market
+                        </Button>
+                      </ButtonGroup>
+                    ) : null}
+                    <SearchInput
+                      compact
+                      accessibilityLabel="Search"
+                      onChangeText={setSearch}
+                      placeholder={
+                        dataSource === 'personal'
+                          ? 'Search your positions'
+                          : 'Search positions and protocols'
+                      }
+                      value={search}
+                    />
+                  </VStack>
                 </Box>
                 <Box paddingX={2} width="100%">
                   <AssetList
+                    dataSource={dataSource}
                     view={activeView}
                     search={search}
                     pools={pools}
                     protocols={protocols}
+                    personalPositions={personalPositions}
                     loading={loading}
+                    personalLoading={personalLoading}
                     error={error}
+                    personalError={personalError}
+                    missingApiKey={missingApiKey}
                     updatedAt={updatedAt}
+                    personalUpdatedAt={personalUpdatedAt}
                     onRefresh={refresh}
+                    onRefreshPersonal={refreshPersonal}
                     pageSize={5}
                   />
                 </Box>
               </VStack>
               <Divider direction="vertical" />
               <Box paddingX={3} paddingY={2}>
-                <CardList pools={pools} loading={loading} />
+                <CardList
+                  pools={pools}
+                  loading={loading}
+                  totalBalanceUsd={totalBalanceUsd}
+                  positionCount={personalPositions.length}
+                  personalLoading={personalLoading}
+                />
               </Box>
             </HStack>
           </VStack>

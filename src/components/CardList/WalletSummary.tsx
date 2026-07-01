@@ -5,8 +5,19 @@ import { Icon } from '@coinbase/cds-web/icons';
 import { formatEther } from 'viem';
 import { useBalance, useConnection } from 'wagmi';
 import { truncateAddress } from '../../utils/wallet';
+import { formatUsd } from '../../utils/format';
 
-export const WalletSummary = () => {
+type WalletSummaryProps = {
+  totalBalanceUsd: number | null;
+  positionCount: number;
+  personalLoading: boolean;
+};
+
+export const WalletSummary = ({
+  totalBalanceUsd,
+  positionCount,
+  personalLoading,
+}: WalletSummaryProps) => {
   const { address, isConnected, chain } = useConnection();
   const { data: balance, isLoading } = useBalance({ address });
 
@@ -39,9 +50,23 @@ export const WalletSummary = () => {
       <VStack gap={1} paddingX={2} paddingBottom={2}>
         <HStack alignItems="center" justifyContent="space-between">
           <Text font="label2" color="fgMuted">
-            Balance
+            Native balance
           </Text>
           <Text font="title3">{formattedBalance}</Text>
+        </HStack>
+        <HStack alignItems="center" justifyContent="space-between">
+          <Text font="label2" color="fgMuted">
+            DeFi net worth
+          </Text>
+          <Text font="title3">
+            {personalLoading || totalBalanceUsd === null ? '…' : formatUsd(totalBalanceUsd)}
+          </Text>
+        </HStack>
+        <HStack alignItems="center" justifyContent="space-between">
+          <Text font="label2" color="fgMuted">
+            Positions
+          </Text>
+          <Text font="title3">{personalLoading ? '…' : positionCount}</Text>
         </HStack>
       </VStack>
     </Card>

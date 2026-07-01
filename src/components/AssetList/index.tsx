@@ -15,69 +15,109 @@ import { ProgressCircle } from '@coinbase/cds-web/visualizations';
 import { useEffect, useMemo, useState } from 'react';
 import { Icon } from '@coinbase/cds-web/icons';
 import { Pagination } from '@coinbase/cds-web/pagination/Pagination';
+import type { PersonalPosition } from '../../api/debank';
 import type { Protocol, YieldPool } from '../../api/defillama';
 import { formatApy, formatPercentChange, formatUsd } from '../../utils/format';
 import { filterPools, filterProtocols, type DataView } from '../../utils/defiViews';
+import {
+  getPersonalRowCount,
+  PersonalPositionsTable,
+} from './PersonalPositionsTable';
+
+export type DataSource = 'market' | 'personal';
 
 type AssetListProps = {
+  dataSource: DataSource;
   view: DataView;
   search: string;
   pools: YieldPool[];
   protocols: Protocol[];
+  personalPositions: PersonalPosition[];
   loading: boolean;
+  personalLoading: boolean;
   error: string | null;
+  personalError: string | null;
+  missingApiKey: boolean;
   updatedAt: Date | null;
+  personalUpdatedAt: Date | null;
   onRefresh: () => void;
+  onRefreshPersonal: () => void;
   pageSize: number;
 };
 
 export const AssetList = ({
+  dataSource,
   view,
   search,
   pools,
   protocols,
+  personalPositions,
   loading,
+  personalLoading,
   error,
+  personalError,
+  missingApiKey,
   updatedAt,
+  personalUpdatedAt,
   onRefresh,
+  onRefreshPersonal,
   pageSize,
 }: AssetListProps) => {
   const [activePage, setActivePage] = useState(1);
+  const isPersonal = dataSource === 'personal';
   const isProtocolView = view === 'protocols';
 
   useEffect(() => {
     setActivePage(1);
-  }, [view, search]);
+  }, [view, search, dataSource]);
 
-  const rows = useMemo(() => {
+  const marketRows = useMemo(() => {
     return isProtocolView ? filterProtocols(protocols, search) : filterPools(pools, view, search);
   }, [isProtocolView, protocols, pools, search, view]);
 
-  const totalPages = Math.max(1, Math.ceil(rows.length / pageSize));
+  const rowCount = isPersonal
+    ? getPersonalRowCount(view, search, personalPositions)
+    : marketRows.length;
+
+  const totalPages = Math.max(1, Math.ceil(rowCount / pageSize));
   const currentPage = Math.min(activePage, totalPages);
   const startIndex = (currentPage - 1) * pageSize;
-  const pageRows = rows.slice(startIndex, startIndex + pageSize);
+  const pageRows = isPersonal ? [] : marketRows.slice(startIndex, startIndex + pageSize);
 
-  if (loading) {
+  if (isPersonal && missingApiKey) {
+    return (
+      <Banner variant="warning" title="DeBank API key required" startIcon="info">
+        Add your access key to `.env` as `VITE_DEBANK_ACCESS_KEY`. Get a free key at
+        cloud.debank.com, then restart the dev server.
+      </Banner>
+    );
+  }
+
+  const isLoading = isPersonal ? personalLoading : loading;
+  const activeError = isPersonal ? personalError : error;
+  const activeUpdatedAt = isPersonal ? personalUpdatedAt : updatedAt;
+  const onActiveRefresh = isPersonal ? onRefreshPersonal : onRefresh;
+
+  if (isLoading) {
     return (
       <VStack alignItems="center" gap={2} paddingY={6}>
         <ProgressCircle indeterminate size={48} />
         <Text font="label2" color="fgMuted">
-          Loading live protocol data…
+          {isPersonal ? 'Loading your DeFi positions…' : 'Loading live protocol data…'}
         </Text>
       </VStack>
     );
   }
 
-  if (error) {
+  if (activeError) {
     return (
       <Banner
         variant="error"
-        title="Unable to load live data"
+        title={isPersonal ? 'Unable to load wallet positions' : 'Unable to load live data'}
         startIcon="warning"
-        primaryAction={<Button onClick={onRefresh}>Retry</Button>}
+        primaryAction={<Button onClick={onActiveRefresh}>Retry</Button>}
       >
-        {error}
+        {activeError}
       </Banner>
     );
   }
@@ -86,15 +126,25 @@ export const AssetList = ({
     <VStack gap={2} width="100%">
       <HStack alignItems="center" justifyContent="space-between" paddingX={1}>
         <Text font="label2" color="fgMuted">
-          {rows.length} {isProtocolView ? 'protocols' : 'pools'} · DefiLlama
-          {updatedAt ? ` · Updated ${updatedAt.toLocaleTimeString()}` : ''}
+          {rowCount} {isPersonal ? (isProtocolView ? 'protocols' : 'positions') : isProtocolView ? 'protocols' : 'pools'} ·{' '}
+          {isPersonal ? 'DeBank' : 'DefiLlama'}
+          {activeUpdatedAt ? ` · Updated ${activeUpdatedAt.toLocaleTimeString()}` : ''}
         </Text>
-        <Button compact variant="secondary" onClick={onRefresh}>
+        <Button compact variant="secondary" onClick={onActiveRefresh}>
           Refresh
         </Button>
       </HStack>
 
-      {isProtocolView ? (
+      {isPersonal ? (
+        <PersonalPositionsTable
+          view={view}
+          search={search}
+          positions={personalPositions}
+          pageSize={pageSize}
+          activePage={currentPage}
+          onPageChange={setActivePage}
+        />
+      ) : isProtocolView ? (
         <Table tableLayout="auto" variant="ruled">
           <TableHeader>
             <TableRow>
@@ -209,10 +259,12 @@ export const AssetList = ({
         </Table>
       )}
 
-      {pageRows.length === 0 ? (
+      {rowCount === 0 ? (
         <Box paddingY={4}>
           <Text font="label2" color="fgMuted" textAlign="center">
-            No results match your search.
+            {isPersonal
+              ? 'No DeFi positions found for this wallet.'
+              : 'No results match your search.'}
           </Text>
         </Box>
       ) : null}

@@ -8,12 +8,25 @@ import type { YieldPool } from '../../api/defillama';
 type CardListProps = {
   pools: YieldPool[];
   loading: boolean;
+  totalBalanceUsd: number | null;
+  positionCount: number;
+  personalLoading: boolean;
 };
 
-export const CardList = ({ pools, loading }: CardListProps) => {
+export const CardList = ({
+  pools,
+  loading,
+  totalBalanceUsd,
+  positionCount,
+  personalLoading,
+}: CardListProps) => {
   return (
     <VStack gap={2}>
-      <WalletSummary />
+      <WalletSummary
+        totalBalanceUsd={totalBalanceUsd}
+        positionCount={positionCount}
+        personalLoading={personalLoading}
+      />
       <Divider />
       <RecurringBuyCard pools={pools} loading={loading} />
       <Divider />
