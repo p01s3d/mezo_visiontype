@@ -6,8 +6,8 @@ import {
   TableHeader,
   TableRow,
 } from '@coinbase/cds-web/tables';
-import { Icon } from '@coinbase/cds-web/icons';
 import { Pagination } from '@coinbase/cds-web/pagination/Pagination';
+import { TokenIcon } from '../Home/TokenIcon';
 import type { WalletToken } from '../../api/walletTypes';
 import { formatUsd } from '../../utils/format';
 import { filterWalletTokens, formatTokenAmount } from '../../utils/tokenHoldings';
@@ -49,7 +49,7 @@ export function TokenHoldingsTable({
         {pageRows.map((token) => (
           <TableRow key={token.id}>
             <TableCell
-              start={<Icon name="currencies" size="m" paddingEnd={1} />}
+              start={<TokenIcon size="m" source={token.logoUrl} symbol={token.symbol} />}
               subtitle={token.symbol}
               title={token.name}
               width="30%"

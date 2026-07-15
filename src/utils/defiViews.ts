@@ -9,16 +9,6 @@ export type DataView =
   | 'yield'
   | 'analytics';
 
-export const NAV_VIEWS: DataView[] = [
-  'dashboard',
-  'protocols',
-  'liquidity',
-  'staking',
-  'swap',
-  'yield',
-  'analytics',
-];
-
 const DEX_PROJECTS = new Set([
   'uniswap',
   'curve',

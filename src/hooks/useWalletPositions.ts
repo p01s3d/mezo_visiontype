@@ -26,10 +26,18 @@ type WalletCache = {
   positions: PersonalPosition[];
   tokens: WalletToken[];
   totalBalanceUsd: number | null;
-  updatedAt: Date;
+  positionsFetchedAt: number | null;
+  tokensFetchedAt: number | null;
+  portfolioFetchedAt: number | null;
 };
 
+const CACHE_TTL_MS = 5 * 60 * 1000;
+
 let walletCache: WalletCache | null = null;
+
+function isFresh(timestamp: number | null): boolean {
+  return timestamp !== null && Date.now() - timestamp < CACHE_TTL_MS;
+}
 
 export function useWalletPositions(
   address: Address | undefined,
@@ -67,16 +75,26 @@ export function useWalletPositions(
         return;
       }
 
+      const cache = walletCache?.address === address ? walletCache : null;
+      const needsPositions = dataSource === 'personal' || dataSource === 'home';
+      const needsTokens = dataSource === 'tokens' || dataSource === 'home' || dataSource === 'holdings';
+      const hasCachedPositions = cache && isFresh(cache.positionsFetchedAt);
+      const hasCachedTokens = cache && isFresh(cache.tokensFetchedAt);
+      const hasCachedPortfolio = cache && isFresh(cache.portfolioFetchedAt);
+
       if (
         !force &&
-        walletCache &&
-        walletCache.address === address &&
-        Date.now() - walletCache.updatedAt.getTime() < 60_000
+        cache &&
+        hasCachedPortfolio &&
+        (!needsPositions || hasCachedPositions) &&
+        (!needsTokens || hasCachedTokens)
       ) {
-        setPositions(walletCache.positions);
-        setTokens(walletCache.tokens);
-        setTotalBalanceUsd(walletCache.totalBalanceUsd);
-        setUpdatedAt(walletCache.updatedAt);
+        setPositions(cache.positions);
+        setTokens(cache.tokens);
+        setTotalBalanceUsd(cache.totalBalanceUsd);
+        setUpdatedAt(
+          new Date(cache.portfolioFetchedAt ?? cache.positionsFetchedAt ?? cache.tokensFetchedAt ?? Date.now()),
+        );
         setMissingApiKey(false);
         setApiKeyIssue(null);
         setError(null);
@@ -89,44 +107,44 @@ export function useWalletPositions(
       setApiKeyIssue(null);
 
       try {
-        const needsPositions = dataSource === 'personal';
-        const needsTokens = dataSource === 'tokens';
-        const requests: Promise<unknown>[] = [fetchWalletPortfolio(address)];
+        let nextPositions = cache?.positions ?? [];
+        let nextTokens = cache?.tokens ?? [];
+        let nextTotal = cache?.totalBalanceUsd ?? null;
+        let positionsFetchedAt = cache?.positionsFetchedAt ?? null;
+        let tokensFetchedAt = cache?.tokensFetchedAt ?? null;
+        let portfolioFetchedAt = cache?.portfolioFetchedAt ?? null;
 
-        if (needsPositions) {
-          requests.push(fetchWalletProtocolPositions(address));
-        }
-        if (needsTokens) {
-          requests.push(fetchWalletTokens(address));
-        }
-
-        const results = await Promise.all(requests);
-        const portfolioTotal = results[0] as number;
-        let nextPositions = walletCache?.address === address ? walletCache.positions : [];
-        let nextTokens = walletCache?.address === address ? walletCache.tokens : [];
-
-        let resultIndex = 1;
-        if (needsPositions) {
-          nextPositions = results[resultIndex] as PersonalPosition[];
-          resultIndex += 1;
-        }
-        if (needsTokens) {
-          nextTokens = results[resultIndex] as WalletToken[];
+        if (!hasCachedPortfolio || force) {
+          nextTotal = await fetchWalletPortfolio(address);
+          portfolioFetchedAt = Date.now();
         }
 
-        const nextUpdatedAt = new Date();
+        if (needsPositions && (!hasCachedPositions || force)) {
+          nextPositions = await fetchWalletProtocolPositions(address);
+          positionsFetchedAt = Date.now();
+        }
+
+        if (needsTokens && (!hasCachedTokens || force)) {
+          nextTokens = await fetchWalletTokens(address);
+          tokensFetchedAt = Date.now();
+        }
+
         walletCache = {
           address,
           positions: nextPositions,
           tokens: nextTokens,
-          totalBalanceUsd: portfolioTotal,
-          updatedAt: nextUpdatedAt,
+          totalBalanceUsd: nextTotal,
+          positionsFetchedAt,
+          tokensFetchedAt,
+          portfolioFetchedAt,
         };
 
         setPositions(nextPositions);
         setTokens(nextTokens);
-        setTotalBalanceUsd(portfolioTotal);
-        setUpdatedAt(nextUpdatedAt);
+        setTotalBalanceUsd(nextTotal);
+        setUpdatedAt(
+          new Date(portfolioFetchedAt ?? positionsFetchedAt ?? tokensFetchedAt ?? Date.now()),
+        );
       } catch (err) {
         setError(err instanceof Error ? err.message : 'Failed to load wallet data');
       } finally {

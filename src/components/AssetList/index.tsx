@@ -25,7 +25,7 @@ import {
 } from './PersonalPositionsTable';
 import { getTokenRowCount, TokenHoldingsTable } from './TokenHoldingsTable';
 
-export type DataSource = 'market' | 'personal' | 'tokens';
+export type DataSource = 'market' | 'personal' | 'tokens' | 'home' | 'holdings' | 'transactions';
 
 type AssetListProps = {
   dataSource: DataSource;

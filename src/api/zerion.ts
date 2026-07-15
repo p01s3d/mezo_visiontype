@@ -1,6 +1,9 @@
 import type { PersonalPosition, WalletToken } from './walletTypes';
 
 const ZERION_BASE_URL = '/api/zerion/v1';
+const PAGE_SIZE = 100;
+const MAX_PAGES = 1;
+const RETRY_DELAYS_MS = [1000, 2000];
 
 type ZerionLinks = {
   self: string;
@@ -54,6 +57,8 @@ type ZerionPortfolioResponse = {
   };
 };
 
+const inFlightRequests = new Map<string, Promise<unknown>>();
+
 export function getZerionApiKeyIssue(): 'missing' | 'empty' | null {
   const rawKey = import.meta.env.VITE_ZERION_API_KEY;
   if (rawKey === undefined) return 'missing';
@@ -61,7 +66,13 @@ export function getZerionApiKeyIssue(): 'missing' | 'empty' | null {
   return null;
 }
 
-async function zerionFetch<T>(path: string): Promise<T> {
+function sleep(ms: number): Promise<void> {
+  return new Promise((resolve) => {
+    window.setTimeout(resolve, ms);
+  });
+}
+
+async function zerionFetch<T>(path: string, attempt = 0): Promise<T> {
   const response = await fetch(`${ZERION_BASE_URL}${path}`, {
     headers: {
       accept: 'application/json',
@@ -69,6 +80,11 @@ async function zerionFetch<T>(path: string): Promise<T> {
   });
 
   if (!response.ok) {
+    if (response.status === 429 && attempt < RETRY_DELAYS_MS.length) {
+      await sleep(RETRY_DELAYS_MS[attempt]);
+      return zerionFetch<T>(path, attempt + 1);
+    }
+
     let detail = `Zerion request failed (${response.status})`;
     try {
       const body = (await response.json()) as {
@@ -85,7 +101,9 @@ async function zerionFetch<T>(path: string): Promise<T> {
       throw new Error('Invalid Zerion API key. Check VITE_ZERION_API_KEY in `.env`.');
     }
     if (response.status === 429) {
-      throw new Error('Zerion rate limit reached. Try again in a moment.');
+      throw new Error(
+        'Zerion rate limit reached. Wait a minute, avoid switching tabs quickly, or upgrade your plan at dashboard.zerion.io.',
+      );
     }
 
     throw new Error(detail);
@@ -94,7 +112,18 @@ async function zerionFetch<T>(path: string): Promise<T> {
   return response.json() as Promise<T>;
 }
 
-async function fetchAllPositions(
+function dedupeRequest<T>(key: string, request: () => Promise<T>): Promise<T> {
+  const existing = inFlightRequests.get(key) as Promise<T> | undefined;
+  if (existing) return existing;
+
+  const promise = request().finally(() => {
+    inFlightRequests.delete(key);
+  });
+  inFlightRequests.set(key, promise);
+  return promise;
+}
+
+async function fetchPositionsPage(
   address: string,
   positionsFilter: 'only_simple' | 'only_complex',
 ): Promise<ZerionPosition[]> {
@@ -103,48 +132,57 @@ async function fetchAllPositions(
     'filter[positions]': positionsFilter,
     'filter[trash]': 'only_non_trash',
     sort: '-value',
+    'page[size]': String(PAGE_SIZE),
   });
 
   let url: string | null = `/wallets/${address}/positions/?${params.toString()}`;
   const allPositions: ZerionPosition[] = [];
+  let pagesFetched = 0;
 
-  while (url) {
+  while (url && pagesFetched < MAX_PAGES) {
     const response: ZerionPositionsResponse = await zerionFetch<ZerionPositionsResponse>(url);
     allPositions.push(...response.data);
+    pagesFetched += 1;
     url = response.links.next ? response.links.next.replace('https://api.zerion.io/v1', '') : null;
   }
 
   return allPositions;
 }
 
-export async function fetchWalletPortfolio(address: string): Promise<number> {
-  const params = new URLSearchParams({
-    currency: 'usd',
-    'filter[positions]': 'no_filter',
+export function fetchWalletPortfolio(address: string): Promise<number> {
+  return dedupeRequest(`portfolio:${address}`, async () => {
+    const params = new URLSearchParams({
+      currency: 'usd',
+      'filter[positions]': 'no_filter',
+    });
+    const response = await zerionFetch<ZerionPortfolioResponse>(
+      `/wallets/${address}/portfolio?${params.toString()}`,
+    );
+
+    return response.data.attributes.total?.positions ?? 0;
   });
-  const response = await zerionFetch<ZerionPortfolioResponse>(
-    `/wallets/${address}/portfolio?${params.toString()}`,
-  );
-
-  return response.data.attributes.total?.positions ?? 0;
 }
 
-export async function fetchWalletProtocolPositions(address: string): Promise<PersonalPosition[]> {
-  const positions = await fetchAllPositions(address, 'only_complex');
+export function fetchWalletProtocolPositions(address: string): Promise<PersonalPosition[]> {
+  return dedupeRequest(`positions:${address}`, async () => {
+    const positions = await fetchPositionsPage(address, 'only_complex');
 
-  return positions
-    .map((position) => mapDefiPosition(position))
-    .filter((position) => position.valueUsd > 0)
-    .sort((a, b) => b.valueUsd - a.valueUsd);
+    return positions
+      .map((position) => mapDefiPosition(position))
+      .filter((position) => position.valueUsd > 0)
+      .sort((a, b) => b.valueUsd - a.valueUsd);
+  });
 }
 
-export async function fetchWalletTokens(address: string): Promise<WalletToken[]> {
-  const positions = await fetchAllPositions(address, 'only_simple');
+export function fetchWalletTokens(address: string): Promise<WalletToken[]> {
+  return dedupeRequest(`tokens:${address}`, async () => {
+    const positions = await fetchPositionsPage(address, 'only_simple');
 
-  return positions
-    .map((position) => mapWalletToken(position))
-    .filter((token) => token.amount > 0 && (token.isCore || token.valueUsd >= 0.01))
-    .sort((a, b) => b.valueUsd - a.valueUsd);
+    return positions
+      .map((position) => mapWalletToken(position))
+      .filter((token) => token.amount > 0 && (token.isCore || token.valueUsd >= 0.01))
+      .sort((a, b) => b.valueUsd - a.valueUsd);
+  });
 }
 
 function mapDefiPosition(position: ZerionPosition): PersonalPosition {
@@ -179,7 +217,10 @@ function mapWalletToken(position: ZerionPosition): WalletToken {
 }
 
 export function summarizeByProtocol(positions: PersonalPosition[]) {
-  const grouped = new Map<string, { id: string; protocol: string; chain: string; valueUsd: number; positionCount: number }>();
+  const grouped = new Map<
+    string,
+    { id: string; protocol: string; chain: string; valueUsd: number; positionCount: number }
+  >();
 
   for (const position of positions) {
     const key = `${position.chain}-${position.protocol}`;

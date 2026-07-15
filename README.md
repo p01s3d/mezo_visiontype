@@ -24,3 +24,5 @@ npx yarn
 ## Documentation
 
 Visit [cds.coinbase.com](https://cds.coinbase.com) for CDS component docs and theming guides.
+
+**Build workflow guide:** open `/?guide` for a Prime-style developer walkthrough with live CDS previews and real code from this repo (no nav link — share the URL directly).

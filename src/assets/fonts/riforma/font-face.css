@@ -1,0 +1,63 @@
+@font-face {
+  font-family: 'Riforma';
+  src: url('./RiformaLLWeb-Light.woff2') format('woff2');
+  font-weight: 300;
+  font-display: swap;
+  font-style: normal;
+}
+
+@font-face {
+  font-family: 'Riforma';
+  src: url('./RiformaLLWeb-Regular.woff2') format('woff2');
+  font-weight: 400;
+  font-display: swap;
+  font-style: normal;
+}
+
+@font-face {
+  font-family: 'Riforma';
+  src: url('./RiformaLLWeb-Medium.woff2') format('woff2');
+  font-weight: 500;
+  font-display: swap;
+  font-style: normal;
+}
+
+@font-face {
+  font-family: 'Riforma';
+  src: url('./RiformaLLWeb-Medium.woff2') format('woff2');
+  font-weight: 600;
+  font-display: swap;
+  font-style: normal;
+}
+
+@font-face {
+  font-family: 'Riforma';
+  src: url('./RiformaLLWeb-Bold.woff2') format('woff2');
+  font-weight: 700;
+  font-display: swap;
+  font-style: normal;
+}
+
+@font-face {
+  font-family: 'Riforma';
+  src: url('./RiformaLLWeb-Heavy.woff2') format('woff2');
+  font-weight: 900;
+  font-display: swap;
+  font-style: normal;
+}
+
+@font-face {
+  font-family: 'Riforma Mono';
+  src: url('./RiformaMonoLLWeb-Regular.woff2') format('woff2');
+  font-weight: 400;
+  font-display: swap;
+  font-style: normal;
+}
+
+@font-face {
+  font-family: 'Riforma Mono';
+  src: url('./RiformaMonoLLWeb-Bold.woff2') format('woff2');
+  font-weight: 700;
+  font-display: swap;
+  font-style: normal;
+}

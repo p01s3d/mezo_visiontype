@@ -1,57 +1,48 @@
-import { useState, useEffect } from 'react';
+import { useCallback, useState } from 'react';
 import type { ColorScheme } from '@coinbase/cds-common';
 import { ThemeProvider } from '@coinbase/cds-web';
-import { defaultTheme } from '@coinbase/cds-web/themes/defaultTheme';
-import { Box, Divider, HStack, VStack } from '@coinbase/cds-web/layout';
-import { Sidebar, SidebarItem } from '@coinbase/cds-web/navigation';
+import { PortalProvider } from '@coinbase/cds-web/overlays';
+import { defiTheme } from './theme/defiTheme';
+import { Box, HStack, VStack } from '@coinbase/cds-web/layout';
 import { MediaQueryProvider } from '@coinbase/cds-web/system';
 import { Navbar } from './components/Navbar';
-import { AssetList, type DataSource } from './components/AssetList';
-import { CDSLogo } from './components/CDSLogo';
-import { CardList } from './components/CardList';
-import { SearchInput } from '@coinbase/cds-web/controls';
-import { Button, ButtonGroup } from '@coinbase/cds-web/buttons';
+import { AssetList } from './components/AssetList';
+import { HomeDashboard, HoldingsView, TransactionsView } from './components/Home';
+import { DefiSidebar } from './components/Sidebar';
+import { WorkflowGuide } from './components/WorkflowGuide';
+import { MezoApp } from './components/Mezo/MezoApp';
+import { ALL_NAV } from './data/navConfig';
 import { useDefiData } from './hooks/useDefiData';
 import { useWalletPositions } from './hooks/useWalletPositions';
-import { NAV_VIEWS } from './utils/defiViews';
 import { useConnection } from 'wagmi';
 
-const navItems = [
-  {
-    title: 'Dashboard',
-    icon: 'chartPie',
-  },
-  {
-    title: 'Protocols',
-    icon: 'defi',
-  },
-  {
-    title: 'Liquidity',
-    icon: 'trading',
-  },
-  {
-    title: 'Staking',
-    icon: 'giftBox',
-  },
-  {
-    title: 'Swap',
-    icon: 'pay',
-  },
-  {
-    title: 'Yield',
-    icon: 'cash',
-  },
-  {
-    title: 'Analytics',
-    icon: 'newsFeed',
-  },
-] as const;
+function isGuideView() {
+  return new URLSearchParams(window.location.search).has('guide');
+}
+
+const IS_TXS_VIEW = new URLSearchParams(window.location.search).has('txs');
+
+function clearGuideFromUrl() {
+  const url = new URL(window.location.href);
+  if (!url.searchParams.has('guide')) return;
+  url.searchParams.delete('guide');
+  const next = `${url.pathname}${url.search}${url.hash}`;
+  window.history.replaceState(null, '', next || url.pathname);
+}
 
 export const App = () => {
+  // ?txs renders the standalone prototype, bypassing the CDS shell entirely.
+  return IS_TXS_VIEW ? <MezoApp /> : <DashboardApp />;
+};
+
+const DashboardApp = () => {
+  const [showGuide, setShowGuide] = useState(isGuideView);
   const [activeNavIndex, setActiveNavIndex] = useState(0);
-  const [search, setSearch] = useState('');
-  const [dataSource, setDataSource] = useState<DataSource>('market');
-  const activeNavItem = navItems[activeNavIndex];
+  const activeNavItem = ALL_NAV[activeNavIndex];
+  const dataSource = activeNavItem.dataSource;
+  const isHome = dataSource === 'home';
+  const isHoldings = dataSource === 'holdings';
+  const isTransactions = dataSource === 'transactions';
 
   const [activeColorScheme, setActiveColorScheme] = useState<ColorScheme>('light');
   const { address, isConnected } = useConnection();
@@ -67,120 +58,77 @@ export const App = () => {
     updatedAt: personalUpdatedAt,
     refresh: refreshPersonal,
   } = useWalletPositions(address, dataSource);
-  const activeView = NAV_VIEWS[activeNavIndex];
-
-  useEffect(() => {
-    if (isConnected) {
-      setDataSource('personal');
-    } else {
-      setDataSource('market');
-    }
-  }, [isConnected]);
+  const activeView = activeNavItem.view;
 
   const toggleColorScheme = () => setActiveColorScheme((s) => (s === 'light' ? 'dark' : 'light'));
 
+  const handleNavSelect = useCallback((index: number) => {
+    clearGuideFromUrl();
+    setShowGuide(false);
+    setActiveNavIndex(index);
+  }, []);
+
+  const navbarTitle = showGuide ? 'Build guide' : activeNavItem.title;
+
   return (
     <MediaQueryProvider>
-      <ThemeProvider theme={defaultTheme} activeColorScheme={activeColorScheme}>
-        <HStack background="bg">
-          <Sidebar autoCollapse height="100vh" logo={<CDSLogo />}>
-            {navItems.map(({ title, icon }, index) => (
-              <SidebarItem
-                key={title}
-                active={index === activeNavIndex}
-                icon={icon}
-                onClick={() => {
-                  setActiveNavIndex(index);
-                  setSearch('');
-                }}
-                title={title}
+      <ThemeProvider theme={defiTheme} activeColorScheme={activeColorScheme}>
+        <PortalProvider>
+          <HStack alignItems="stretch" background="bg" height="100vh" overflow="hidden" width="100%">
+            <DefiSidebar activeIndex={activeNavIndex} onSelect={handleNavSelect} />
+            <VStack flexGrow={1} minHeight={0} overflow="auto" width="100%" zIndex={0}>
+            <Navbar title={navbarTitle} toggleColorScheme={toggleColorScheme} />
+            {showGuide ? (
+              <WorkflowGuide />
+            ) : isHome ? (
+              <HomeDashboard
+                apiKeyIssue={apiKeyIssue}
+                isConnected={isConnected}
+                missingApiKey={missingApiKey}
+                personalLoading={personalLoading}
+                totalBalanceUsd={totalBalanceUsd}
+                walletTokens={walletTokens}
               />
-            ))}
-          </Sidebar>
-          <VStack width="100%" zIndex={0}>
-            <Navbar title={activeNavItem.title} toggleColorScheme={toggleColorScheme} />
-            <HStack width="100%">
-              <VStack width={{ base: 500, desktop: 660 }}>
-                <Box padding={2}>
-                  <VStack gap={2}>
-                    {isConnected ? (
-                      <ButtonGroup accessibilityLabel="Data source">
-                        <Button
-                          compact
-                          onClick={() => setDataSource('personal')}
-                          variant={dataSource === 'personal' ? 'primary' : 'secondary'}
-                        >
-                          My positions
-                        </Button>
-                        <Button
-                          compact
-                          onClick={() => setDataSource('tokens')}
-                          variant={dataSource === 'tokens' ? 'primary' : 'secondary'}
-                        >
-                          Tokens
-                        </Button>
-                        <Button
-                          compact
-                          onClick={() => setDataSource('market')}
-                          variant={dataSource === 'market' ? 'primary' : 'secondary'}
-                        >
-                          Market
-                        </Button>
-                      </ButtonGroup>
-                    ) : null}
-                    <SearchInput
-                      compact
-                      accessibilityLabel="Search"
-                      onChangeText={setSearch}
-                      placeholder={
-                        dataSource === 'tokens'
-                          ? 'Search your tokens'
-                          : dataSource === 'personal'
-                            ? 'Search your positions'
-                            : 'Search positions and protocols'
-                      }
-                      value={search}
+            ) : isHoldings ? (
+              <HoldingsView
+                isConnected={isConnected}
+                loading={personalLoading}
+                totalBalanceUsd={totalBalanceUsd}
+                walletTokens={walletTokens}
+              />
+            ) : isTransactions ? (
+              <TransactionsView isConnected={isConnected} loading={personalLoading} />
+            ) : (
+              <HStack alignItems="flex-start" width="100%">
+                <VStack flexGrow={1} maxWidth={720}>
+                  <Box paddingX={2} paddingY={2} width="100%">
+                    <AssetList
+                      dataSource={dataSource}
+                      view={activeView}
+                      search=""
+                      pools={pools}
+                      protocols={protocols}
+                      personalPositions={personalPositions}
+                      walletTokens={walletTokens}
+                      loading={loading}
+                      personalLoading={personalLoading}
+                      error={error}
+                      personalError={personalError}
+                      missingApiKey={missingApiKey}
+                      apiKeyIssue={apiKeyIssue}
+                      updatedAt={updatedAt}
+                      personalUpdatedAt={personalUpdatedAt}
+                      onRefresh={refresh}
+                      onRefreshPersonal={refreshPersonal}
+                      pageSize={8}
                     />
-                  </VStack>
-                </Box>
-                <Box paddingX={2} width="100%">
-                  <AssetList
-                    dataSource={dataSource}
-                    view={activeView}
-                    search={search}
-                    pools={pools}
-                    protocols={protocols}
-                    personalPositions={personalPositions}
-                    walletTokens={walletTokens}
-                    loading={loading}
-                    personalLoading={personalLoading}
-                    error={error}
-                    personalError={personalError}
-                    missingApiKey={missingApiKey}
-                    apiKeyIssue={apiKeyIssue}
-                    updatedAt={updatedAt}
-                    personalUpdatedAt={personalUpdatedAt}
-                    onRefresh={refresh}
-                    onRefreshPersonal={refreshPersonal}
-                    pageSize={5}
-                  />
-                </Box>
-              </VStack>
-              <Divider direction="vertical" />
-              <Box paddingX={3} paddingY={2}>
-                <CardList
-                  pools={pools}
-                  loading={loading}
-                  totalBalanceUsd={totalBalanceUsd}
-                  positionCount={personalPositions.length}
-                  tokenCount={walletTokens.length}
-                  topToken={walletTokens[0] ?? null}
-                  personalLoading={personalLoading}
-                />
-              </Box>
-            </HStack>
-          </VStack>
-        </HStack>
+                  </Box>
+                </VStack>
+              </HStack>
+            )}
+            </VStack>
+          </HStack>
+        </PortalProvider>
       </ThemeProvider>
     </MediaQueryProvider>
   );

@@ -1,0 +1,157 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Guide preview draft — Trade panel</title>
+    <link rel="stylesheet" href="guide-tokens.css" />
+    <link rel="stylesheet" href="trade-preview.css" />
+    <!-- Optional: copy Riforma woff2 files from src/assets/fonts/riforma/ -->
+    <style>
+      @font-face {
+        font-family: 'Riforma';
+        src: url('../../src/assets/fonts/riforma/RiformaLLWeb-Regular.woff2') format('woff2');
+        font-weight: 400;
+        font-display: swap;
+      }
+      @font-face {
+        font-family: 'Riforma Mono';
+        src: url('../../src/assets/fonts/riforma/RiformaLLWeb-Regular.woff2') format('woff2');
+        font-weight: 400;
+        font-display: swap;
+      }
+    </style>
+  </head>
+  <body>
+    <section class="guide-band">
+      <div class="guide-container">
+        <article class="guide-section">
+          <!-- Left: copy from guideContent.ts → trade chapter -->
+          <div class="guide-section__copy">
+            <h2 class="guide-section__title">Flat right rail, no card elevation</h2>
+            <p class="guide-section__body">
+              TradePanel sits directly on the canvas: SegmentedTabs, order dropdown pill, large
+              numeric input, and primary CTA with borderRadius={1000}.
+            </p>
+            <p class="guide-steps__label">How to</p>
+            <ol class="guide-steps">
+              <li>
+                <span class="guide-steps__num">1.</span>
+                <span>SegmentedTabs for Buy / Sell / Convert</span>
+              </li>
+              <li>
+                <span class="guide-steps__num">2.</span>
+                <span>Dropdown + Pressable pill for order type</span>
+              </li>
+              <li>
+                <span class="guide-steps__num">3.</span>
+                <span>Keep quick actions flat below a Divider — no Card wrapper</span>
+              </li>
+            </ol>
+          </div>
+
+          <!-- Right: static trade panel mock -->
+          <div class="guide-section__preview">
+            <div class="preview-card">
+              <div class="trade-panel" aria-hidden="true">
+                <div class="trade-tabs" role="tablist">
+                  <span class="trade-tabs__item trade-tabs__item--active" role="tab">Buy</span>
+                  <span class="trade-tabs__item" role="tab">Sell</span>
+                  <span class="trade-tabs__item" role="tab">Convert</span>
+                </div>
+
+                <div class="trade-order-pill">
+                  <span>One-time order</span>
+                  <svg width="12" height="12" viewBox="0 0 12 12" fill="none" aria-hidden="true">
+                    <path
+                      d="M3 4.5L6 7.5L9 4.5"
+                      stroke="currentColor"
+                      stroke-width="1.5"
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                    />
+                  </svg>
+                </div>
+
+                <div>
+                  <div class="trade-amount-row">
+                    <div class="trade-amount">
+                      <span class="trade-amount__value">100</span>
+                      <span class="trade-amount__currency">USD</span>
+                    </div>
+                    <span class="trade-chip">Max</span>
+                  </div>
+                  <div class="trade-convert">
+                    <svg width="14" height="14" viewBox="0 0 14 14" fill="none" aria-hidden="true">
+                      <path
+                        d="M4 2v3H1M10 12V9h3M1 5l2.5-2.5M13 9l-2.5 2.5"
+                        stroke="currentColor"
+                        stroke-width="1.25"
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                      />
+                    </svg>
+                    <span>0.00153846 BTC</span>
+                  </div>
+                </div>
+
+                <div class="trade-assets">
+                  <div class="trade-asset-row">
+                    <div class="trade-asset-row__icon-col">
+                      <img
+                        class="trade-asset-row__icon"
+                        src="https://assets.coincap.io/assets/icons/usdc@2x.png"
+                        alt=""
+                        width="40"
+                        height="40"
+                      />
+                      <div class="trade-asset-row__connector"></div>
+                    </div>
+                    <div class="trade-asset-row__copy">
+                      <p class="trade-asset-row__title">Pay with</p>
+                      <p class="trade-asset-row__subtitle">USD Wallet</p>
+                    </div>
+                    <div class="trade-asset-row__caret">
+                      <svg width="8" height="12" viewBox="0 0 8 12" fill="none" aria-hidden="true">
+                        <path
+                          d="M1.5 1L6.5 6L1.5 11"
+                          stroke="currentColor"
+                          stroke-width="1.5"
+                          stroke-linecap="round"
+                          stroke-linejoin="round"
+                        />
+                      </svg>
+                    </div>
+                  </div>
+
+                  <div class="trade-asset-row">
+                    <div class="trade-asset-row__icon-col">
+                      <div class="trade-asset-row__icon trade-asset-row__icon--fallback">BTC</div>
+                    </div>
+                    <div class="trade-asset-row__copy">
+                      <p class="trade-asset-row__title">Buy</p>
+                      <p class="trade-asset-row__subtitle">Bitcoin</p>
+                    </div>
+                    <div class="trade-asset-row__caret">
+                      <svg width="8" height="12" viewBox="0 0 8 12" fill="none" aria-hidden="true">
+                        <path
+                          d="M1.5 1L6.5 6L1.5 11"
+                          stroke="currentColor"
+                          stroke-width="1.5"
+                          stroke-linecap="round"
+                          stroke-linejoin="round"
+                        />
+                      </svg>
+                    </div>
+                  </div>
+                </div>
+
+                <button type="button" class="trade-cta" disabled>Top up USD wallet</button>
+              </div>
+            </div>
+          </div>
+        </article>
+      </div>
+    </section>
+  </body>
+</html>

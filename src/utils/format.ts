@@ -20,3 +20,16 @@ export function formatPercentChange(value: number | null): string {
   const prefix = value > 0 ? '+' : '';
   return `${prefix}${value.toFixed(2)}%`;
 }
+
+export function formatSignedUsd(value: number, direction: 'in' | 'out'): string {
+  const prefix = direction === 'in' ? '+' : '-';
+  return `${prefix}${formatUsd(Math.abs(value))}`;
+}
+
+export function formatTransactionDate(isoDate: string): string {
+  return new Intl.DateTimeFormat('en-US', {
+    month: 'short',
+    day: 'numeric',
+    year: 'numeric',
+  }).format(new Date(isoDate));
+}

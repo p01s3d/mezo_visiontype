@@ -1,0 +1,13 @@
+@layer cds {
+  :root {
+    --defaultFont-sans: 'Riforma', system-ui, 'Helvetica Neue', Helvetica, Arial, sans-serif;
+    --defaultFont-mono: 'Riforma Mono', ui-monospace, Menlo, Consolas, monospace;
+  }
+
+  html,
+  body,
+  #root {
+    height: 100%;
+    overflow: hidden;
+  }
+}

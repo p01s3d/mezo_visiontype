@@ -1,0 +1,924 @@
+.mezo-root {
+  /* ── reference palette (brand literals live here only) ── */
+  --ref-stallion: #0b1d26;
+  --ref-blood: #661717;
+  --ref-crab: #e1383d;
+  --ref-skirt: #fdaec0;
+  --ref-ice: #f2f8f7;
+  --ref-ginkgo: #fdf43d;
+  --ref-vegan: #3c9a5b;
+  --ref-smalt: #1b3e9f;
+
+  /* ── semantic — light: ~60% neutral / ~30% smalt / ~10% vegan ── */
+  --mezo-bg: color-mix(in oklab, var(--ref-stallion) 4%, var(--ref-ice));
+  --mezo-card: var(--ref-ice);
+  --mezo-surface: var(--ref-ice);
+  --mezo-ink: var(--ref-stallion);
+  --mezo-muted: color-mix(in oklab, var(--ref-stallion) 50%, var(--ref-ice));
+  --mezo-faint: color-mix(in oklab, var(--ref-stallion) 26%, var(--ref-ice));
+  --mezo-border: color-mix(in oklab, var(--ref-stallion) 11%, var(--ref-ice));
+  --mezo-inset: color-mix(in oklab, var(--ref-stallion) 5%, var(--ref-ice));
+  --mezo-accent: var(--ref-smalt);
+  --mezo-accent-soft: color-mix(in oklab, var(--ref-smalt) 12%, var(--ref-ice));
+  --mezo-green: var(--ref-vegan);
+  --mezo-green-soft: color-mix(in oklab, var(--ref-vegan) 13%, var(--ref-ice));
+  --mezo-red: var(--ref-crab);
+  --mezo-rail: var(--ref-stallion);
+  --mezo-shadow: color-mix(in oklab, var(--ref-stallion) 8%, transparent);
+  --mezo-shadow-hover: color-mix(in oklab, var(--ref-stallion) 14%, transparent);
+  --mezo-pill-muted: color-mix(in oklab, var(--ref-stallion) 10%, var(--ref-ice));
+  --mezo-pill-muted-text: var(--ref-stallion);
+  --mezo-tile-bg: radial-gradient(120% 120% at 22% 18%, var(--ref-smalt) 0%, var(--ref-stallion) 100%);
+  --mezo-tile-icon: var(--ref-ice);
+  --mezo-badge: var(--ref-smalt);
+  --mezo-btn-bg: color-mix(in oklab, var(--ref-stallion) 7%, var(--ref-ice));
+  --mezo-btn-hover: color-mix(in oklab, var(--ref-stallion) 12%, var(--ref-ice));
+  --mezo-connector: color-mix(in oklab, var(--ref-stallion) 22%, var(--ref-ice));
+  --mezo-tick-bg: color-mix(in oklab, var(--ref-smalt) 8%, var(--ref-ice));
+  --mezo-tick-text: var(--ref-stallion);
+  --mezo-ticks-track: color-mix(in oklab, var(--ref-stallion) 14%, var(--ref-ice));
+  --mezo-avatar-bg: radial-gradient(90% 90% at 32% 24%, color-mix(in oklab, var(--ref-smalt) 55%, var(--ref-ice)) 0%, var(--ref-stallion) 100%);
+  --mezo-on-accent: var(--ref-ice);
+  --mezo-on-green: var(--ref-stallion);
+  --mezo-pill-green-bg: color-mix(in oklab, var(--ref-vegan) 14%, var(--ref-ice));
+  --mezo-pill-green-text: var(--ref-vegan);
+  --mezo-pill-green-solid-text: var(--ref-stallion);
+  --mezo-upcoming-bg: color-mix(in oklab, var(--ref-stallion) 10%, var(--ref-ice));
+  --mezo-upcoming-text: var(--mezo-muted);
+  --mezo-schedule-pending: var(--mezo-muted);
+  --mezo-schedule-line: color-mix(in oklab, var(--ref-stallion) 14%, var(--ref-ice));
+  --mezo-status-link-bg: color-mix(in oklab, var(--ref-stallion) 8%, var(--ref-ice));
+  --mezo-status-link-text: var(--ref-stallion);
+  --mezo-health-ratio-bg: var(--ref-vegan);
+  --mezo-health-ratio-text: var(--ref-ice);
+  --mezo-health-marker-border: var(--ref-ice);
+  --mezo-rail-fg: var(--ref-ice);
+  --mezo-rail-close: var(--mezo-muted);
+  --mezo-on-badge: var(--ref-ice);
+  --mezo-avatar-face: radial-gradient(80% 80% at 38% 32%, color-mix(in oklab, var(--ref-skirt) 35%, var(--ref-ice)) 0%, color-mix(in oklab, var(--ref-smalt) 40%, var(--ref-stallion)) 100%);
+  --mezo-ease-out: cubic-bezier(0.23, 1, 0.32, 1);
+
+  position: fixed;
+  inset: 0;
+  background: var(--mezo-bg);
+  color: var(--mezo-ink);
+  font-family: 'Riforma', system-ui, 'Helvetica Neue', Helvetica, Arial, sans-serif;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  -webkit-font-smoothing: antialiased;
+  transition: background 0.25s ease, color 0.25s ease;
+}
+
+.mezo-root.is-dark {
+  /* semantic — dark: stallion base, smalt structure, vegan status */
+  --mezo-bg: var(--ref-stallion);
+  --mezo-card: color-mix(in oklab, var(--ref-smalt) 11%, var(--ref-stallion));
+  --mezo-surface: color-mix(in oklab, var(--ref-smalt) 14%, var(--ref-stallion));
+  --mezo-ink: var(--ref-ice);
+  --mezo-muted: color-mix(in oklab, var(--ref-ice) 56%, var(--ref-stallion));
+  --mezo-faint: color-mix(in oklab, var(--ref-ice) 30%, var(--ref-stallion));
+  --mezo-border: color-mix(in oklab, var(--ref-ice) 14%, var(--ref-stallion));
+  --mezo-inset: color-mix(in oklab, var(--ref-smalt) 14%, var(--ref-stallion));
+  --mezo-accent: color-mix(in oklab, var(--ref-smalt) 72%, var(--ref-ice));
+  --mezo-accent-soft: color-mix(in oklab, var(--ref-smalt) 22%, var(--ref-stallion));
+  --mezo-green: var(--ref-vegan);
+  --mezo-green-soft: color-mix(in oklab, var(--ref-vegan) 22%, var(--ref-stallion));
+  --mezo-red: var(--ref-crab);
+  --mezo-rail: var(--ref-stallion);
+  --mezo-shadow: color-mix(in oklab, var(--ref-stallion) 55%, transparent);
+  --mezo-shadow-hover: color-mix(in oklab, var(--ref-stallion) 72%, transparent);
+  --mezo-pill-muted: color-mix(in oklab, var(--ref-ice) 12%, var(--ref-stallion));
+  --mezo-pill-muted-text: var(--ref-ice);
+  --mezo-tile-bg: radial-gradient(120% 120% at 22% 18%, color-mix(in oklab, var(--ref-smalt) 80%, var(--ref-stallion)) 0%, var(--ref-stallion) 100%);
+  --mezo-tile-icon: var(--ref-ice);
+  --mezo-badge: color-mix(in oklab, var(--ref-smalt) 65%, var(--ref-ice));
+  --mezo-btn-bg: color-mix(in oklab, var(--ref-ice) 10%, var(--ref-stallion));
+  --mezo-btn-hover: color-mix(in oklab, var(--ref-ice) 16%, var(--ref-stallion));
+  --mezo-connector: color-mix(in oklab, var(--ref-ice) 22%, var(--ref-stallion));
+  --mezo-tick-bg: color-mix(in oklab, var(--ref-smalt) 28%, var(--ref-stallion));
+  --mezo-tick-text: var(--mezo-muted);
+  --mezo-ticks-track: color-mix(in oklab, var(--ref-ice) 16%, var(--ref-stallion));
+  --mezo-avatar-bg: radial-gradient(90% 90% at 32% 24%, color-mix(in oklab, var(--ref-smalt) 45%, var(--ref-stallion)) 0%, var(--ref-stallion) 100%);
+  --mezo-on-accent: var(--ref-ice);
+  --mezo-on-green: var(--ref-ice);
+  --mezo-pill-green-bg: color-mix(in oklab, var(--ref-vegan) 24%, var(--ref-stallion));
+  --mezo-pill-green-text: color-mix(in oklab, var(--ref-vegan) 55%, var(--ref-ice));
+  --mezo-pill-green-solid-text: var(--ref-ice);
+  --mezo-upcoming-bg: color-mix(in oklab, var(--ref-ice) 10%, var(--ref-stallion));
+  --mezo-upcoming-text: var(--mezo-muted);
+  --mezo-schedule-pending: var(--mezo-muted);
+  --mezo-schedule-line: color-mix(in oklab, var(--ref-ice) 14%, var(--ref-stallion));
+  --mezo-status-link-bg: color-mix(in oklab, var(--ref-ice) 10%, var(--ref-stallion));
+  --mezo-status-link-text: var(--ref-ice);
+  --mezo-health-ratio-bg: var(--ref-vegan);
+  --mezo-health-ratio-text: var(--ref-stallion);
+  --mezo-health-marker-border: var(--mezo-card);
+  --mezo-rail-fg: var(--ref-ice);
+  --mezo-rail-close: var(--mezo-muted);
+  --mezo-on-badge: var(--ref-ice);
+  --mezo-avatar-face: radial-gradient(80% 80% at 38% 32%, color-mix(in oklab, var(--ref-skirt) 28%, var(--ref-stallion)) 0%, color-mix(in oklab, var(--ref-smalt) 50%, var(--ref-stallion)) 100%);
+}
+
+.mezo-root * {
+  box-sizing: border-box;
+}
+
+/* :where keeps specificity at zero so single-class button styles below win */
+:where(.mezo-root) :where(button) {
+  font-family: inherit;
+  border: none;
+  background: none;
+  cursor: pointer;
+  color: inherit;
+  padding: 0;
+}
+
+/* ---------- header ---------- */
+
+.mezo-header {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  padding: 22px 0 16px;
+  flex-shrink: 0;
+  z-index: 5;
+  width: 100%;
+}
+
+.mezo-wordmark {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-weight: 600;
+  font-size: 21px;
+  letter-spacing: -0.01em;
+  color: var(--mezo-ink);
+}
+
+.mezo-wordmark-mark {
+  display: flex;
+  color: var(--mezo-accent);
+}
+
+.mezo-menu-pill {
+  width: 30px;
+  height: 26px;
+  border-radius: 14px;
+  background: var(--mezo-card);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--mezo-muted);
+  box-shadow: 0 1px 3px var(--mezo-shadow);
+}
+
+/* ---------- canvas ---------- */
+
+.mezo-canvas {
+  position: relative;
+  flex: 1;
+  min-height: 0;
+  z-index: 1;
+  overflow-x: auto;
+  overflow-y: hidden;
+  scrollbar-width: none;
+}
+
+.mezo-canvas::-webkit-scrollbar {
+  display: none;
+}
+
+.mezo-canvas-inner {
+  position: relative;
+  height: 100%;
+}
+
+/* ---------- strips ---------- */
+
+/* outer layer: positioned/animated by framer-motion, no visuals */
+.mezo-strip {
+  position: absolute;
+  top: 0;
+  left: 0;
+  will-change: transform;
+}
+
+.mezo-strip.is-clickable {
+  cursor: pointer;
+}
+
+/* mount-entrance layer: staggered fade/scale on first appearance, kept off
+   .mezo-strip-card so it never fights the CSS hover transform */
+.mezo-strip-enter {
+  position: absolute;
+  inset: 0;
+}
+
+/* inner layer: all visuals + the CSS hover lift, so it never fights the
+   framer-motion transform on the outer layer */
+.mezo-strip-card {
+  position: absolute;
+  inset: 0;
+  background: var(--mezo-card);
+  border-radius: 18px;
+  box-shadow: 0 10px 28px var(--mezo-shadow), 0 2px 6px var(--mezo-shadow);
+  overflow: hidden;
+  transition: transform 0.15s cubic-bezier(0.3, 0.9, 0.4, 1), box-shadow 0.15s ease,
+    background 0.25s ease;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .mezo-strip.is-clickable:not(.is-expanded):hover .mezo-strip-card {
+    transform: translateY(-10px) scale(1.02);
+    box-shadow: 0 22px 44px var(--mezo-shadow-hover), 0 4px 10px var(--mezo-shadow);
+  }
+}
+
+/* press feedback: squash while the pointer is down (works on touch too) */
+.mezo-strip.is-clickable:not(.is-expanded):active .mezo-strip-card {
+  transform: translateY(-6px) scale(0.98);
+}
+
+/* anticipation wind-up before expand */
+.mezo-strip.is-anticipating .mezo-strip-card {
+  transform: scale(0.98);
+  transition-duration: 0.08s;
+}
+
+/* deeper shadow while expanded (secondary action) */
+.mezo-strip.is-expanded .mezo-strip-card {
+  box-shadow: 0 24px 48px var(--mezo-shadow-hover), 0 6px 14px var(--mezo-shadow);
+}
+
+/* keyboard focus mirrors hover lift */
+.mezo-strip.is-clickable:focus {
+  outline: none;
+}
+
+.mezo-strip.is-clickable:focus-visible .mezo-strip-card {
+  transform: translateY(-10px) scale(1.02);
+  box-shadow:
+    0 22px 44px var(--mezo-shadow-hover),
+    0 4px 10px var(--mezo-shadow),
+    0 0 0 3px color-mix(in srgb, var(--mezo-accent) 45%, transparent);
+}
+
+/* collapsed-only meta layer (type label, date, dot) */
+.mezo-strip-meta {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 1;
+}
+
+.mezo-strip-type {
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
+  font-size: 13.5px;
+  font-weight: 500;
+  white-space: nowrap;
+}
+
+.mezo-strip-date {
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
+  bottom: 28px;
+  font-size: 11px;
+  color: var(--mezo-muted);
+  line-height: 1.3;
+  white-space: pre-line;
+  text-align: center;
+}
+
+.mezo-strip-dot {
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
+  bottom: 14px;
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+}
+
+/* shared elements that travel between collapsed and expanded states;
+   anchored at 0,0 and positioned purely via animated transforms */
+.mezo-shared {
+  position: absolute;
+  left: 0;
+  top: 0;
+  pointer-events: none;
+  white-space: nowrap;
+  line-height: 1.1;
+  z-index: 2;
+}
+
+.mezo-shared-icon {
+  width: 40px;
+  height: 40px;
+}
+
+.mezo-shared-icon-inner {
+  display: block;
+  transition: transform 0.15s var(--mezo-ease-out);
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .mezo-strip.is-clickable:not(.is-expanded):hover .mezo-shared-icon-inner {
+    transform: translateY(-2px);
+  }
+
+  .mezo-strip.is-clickable:focus-visible .mezo-shared-icon-inner {
+    transform: translateY(-2px);
+  }
+}
+
+.mezo-shared-title {
+  letter-spacing: -0.02em;
+}
+
+.mezo-strip-dot.is-active {
+  background: var(--mezo-green);
+}
+
+.mezo-strip-dot.is-completed {
+  background: var(--mezo-faint);
+}
+
+/* ---------- expanded detail ---------- */
+
+.mezo-detail {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  grid-template-columns: 240px 1fr;
+  gap: 20px;
+  padding: 24px;
+}
+
+.mezo-detail.is-simple {
+  grid-template-columns: 180px 1fr;
+  gap: 16px;
+  padding: 20px;
+}
+
+.mezo-detail-left {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  padding: 8px 0 0 8px;
+}
+
+.mezo-detail-tile {
+  grid-column: 1;
+  grid-row: 1;
+  align-self: start;
+  margin: 8px 0 0 8px;
+  width: 104px;
+  height: 104px;
+  border-radius: 26px;
+  background: var(--mezo-tile-bg);
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--mezo-tile-icon);
+}
+
+.mezo-detail-tile-badge {
+  position: absolute;
+  right: -7px;
+  bottom: -7px;
+  width: 26px;
+  height: 26px;
+  border-radius: 9px;
+  background: var(--mezo-badge);
+  border: 3px solid var(--mezo-card);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--mezo-on-badge);
+}
+
+.mezo-detail-actions {
+  grid-column: 1;
+  grid-row: 1;
+  align-self: end;
+  display: flex;
+  gap: 8px;
+  margin: 0 0 6px 8px;
+}
+
+.mezo-detail-right {
+  grid-column: 2;
+  grid-row: 1;
+  background: var(--mezo-inset);
+  border-radius: 20px;
+  padding: 20px 22px;
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  min-height: 0;
+}
+
+.mezo-detail-btn {
+  padding: 9px 14px;
+  border-radius: 12px;
+  background: var(--mezo-btn-bg);
+  font-size: 12.5px;
+  color: var(--mezo-ink);
+  transition: background 0.15s ease, transform 0.15s var(--mezo-ease-out);
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .mezo-detail-btn:hover {
+    background: var(--mezo-btn-hover);
+  }
+}
+
+.mezo-detail-btn:active {
+  transform: scale(0.97);
+}
+
+.mezo-progress-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-shrink: 0;
+}
+
+.mezo-progress-title {
+  font-size: 13.5px;
+  font-weight: 500;
+}
+
+.mezo-progress-pills {
+  display: flex;
+  gap: 6px;
+}
+
+.mezo-pill {
+  font-size: 11px;
+  padding: 3px 8px;
+  border-radius: 7px;
+}
+
+.mezo-pill.is-green {
+  background: var(--mezo-pill-green-bg);
+  color: var(--mezo-pill-green-text);
+}
+
+.mezo-pill.is-green-solid {
+  background: var(--mezo-green-soft);
+  color: var(--mezo-pill-green-solid-text);
+}
+
+.mezo-detail-columns {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 28px;
+  margin-top: 16px;
+  flex: 1;
+  min-height: 0;
+}
+
+.mezo-detail-columns.is-loan {
+  grid-template-columns: 1.05fr 0.95fr;
+}
+
+/* schedule (left column) */
+
+.mezo-schedule {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  flex: 1;
+}
+
+.mezo-schedule-items {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-height: 0;
+  padding-left: 4px;
+  overflow-y: auto;
+  scrollbar-width: none;
+}
+
+.mezo-schedule-items::-webkit-scrollbar {
+  display: none;
+}
+
+.mezo-schedule-item {
+  display: flex;
+  gap: 10px;
+  position: relative;
+  padding-bottom: 16px;
+}
+
+.mezo-schedule-item:last-child {
+  padding-bottom: 0;
+}
+
+.mezo-schedule-rail {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: 14px;
+  flex-shrink: 0;
+}
+
+.mezo-schedule-marker {
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  margin-top: 3px;
+  flex-shrink: 0;
+}
+
+.mezo-schedule-marker.is-complete {
+  background: var(--mezo-green);
+}
+
+.mezo-schedule-marker.is-pending {
+  background: var(--mezo-card);
+  border: 2px solid var(--mezo-border);
+  width: 11px;
+  height: 11px;
+}
+
+.mezo-schedule-marker.is-upcoming {
+  background: var(--mezo-upcoming-bg);
+}
+
+.mezo-schedule-line {
+  width: 1px;
+  flex: 1;
+  background: var(--mezo-schedule-line);
+  margin-top: 3px;
+  margin-bottom: -13px; /* bridge the item padding so the rail reads continuous */
+}
+
+.mezo-schedule-text {
+  font-size: 11px;
+  color: var(--mezo-muted);
+  line-height: 1.35;
+}
+
+.mezo-schedule-text.is-faded {
+  opacity: 0.45;
+}
+
+.mezo-schedule-amount {
+  display: block;
+  font-size: 13px;
+  color: var(--mezo-ink);
+  margin-top: 2px;
+}
+
+.mezo-schedule-item.is-pending .mezo-schedule-amount {
+  font-size: 16px;
+  font-weight: 500;
+}
+
+.mezo-schedule-item.is-pending .mezo-schedule-text {
+  color: var(--mezo-schedule-pending);
+}
+
+/* status rows (right column) */
+
+.mezo-status-rows {
+  display: flex;
+  flex-direction: column;
+}
+
+.mezo-status-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 11px 0;
+  border-bottom: 1px solid var(--mezo-border);
+  font-size: 12.5px;
+}
+
+.mezo-status-key {
+  color: var(--mezo-muted);
+}
+
+.mezo-status-value {
+  color: var(--mezo-ink);
+}
+
+.mezo-status-value.is-link {
+  background: var(--mezo-status-link-bg);
+  padding: 2px 7px;
+  border-radius: 6px;
+  font-size: 11.5px;
+  color: var(--mezo-status-link-text);
+}
+
+/* loan health */
+
+.mezo-health {
+  margin-top: 14px;
+  background: var(--mezo-card);
+  border-radius: 14px;
+  padding: 12px 14px;
+  flex-shrink: 0;
+}
+
+.mezo-health-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 12.5px;
+}
+
+.mezo-health-title {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.mezo-health-info {
+  width: 15px;
+  height: 15px;
+  border-radius: 50%;
+  border: 1px solid var(--mezo-border);
+  color: var(--mezo-faint);
+  font-size: 9px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.mezo-health-ratio {
+  background: var(--mezo-health-ratio-bg);
+  color: var(--mezo-health-ratio-text);
+  font-size: 11px;
+  padding: 2px 7px;
+  border-radius: 6px;
+}
+
+.mezo-health-bar {
+  position: relative;
+  height: 5px;
+  border-radius: 3px;
+  margin-top: 12px;
+  background: linear-gradient(
+    90deg,
+    var(--ref-blood) 0%,
+    var(--ref-crab) 42%,
+    var(--ref-vegan) 100%
+  );
+}
+
+.mezo-health-marker {
+  position: absolute;
+  top: -3.5px;
+  width: 4px;
+  height: 12px;
+  border-radius: 2px;
+  background: var(--mezo-health-ratio-bg);
+  border: 1px solid var(--mezo-health-marker-border);
+}
+
+/* ---------- timeline ---------- */
+
+.mezo-connector {
+  position: absolute;
+  width: 0;
+  border-left: 1.5px dashed var(--mezo-connector);
+  pointer-events: none;
+}
+
+.mezo-chart-wrap {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  pointer-events: none;
+}
+
+.mezo-tick {
+  position: absolute;
+  transform: translateX(-50%);
+  font-size: 10.5px;
+  color: var(--mezo-tick-text);
+  background: var(--mezo-tick-bg);
+  padding: 3px 8px;
+  border-radius: 7px;
+  white-space: nowrap;
+}
+
+.mezo-chart-pill {
+  position: absolute;
+  transform: translate(-100%, -50%);
+  font-size: 10.5px;
+  color: var(--mezo-on-badge);
+  background: var(--mezo-accent);
+  padding: 3px 8px;
+  border-radius: 7px;
+  white-space: nowrap;
+}
+
+/* ---------- action rail ---------- */
+
+.mezo-rail {
+  position: fixed;
+  right: 26px;
+  top: 50%;
+  transform: translateY(-50%);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  z-index: 6;
+}
+
+.mezo-rail-divider {
+  width: 24px;
+  height: 1px;
+  background: color-mix(in oklab, var(--mezo-rail-fg) 22%, transparent);
+  margin: 2px 0;
+}
+
+.mezo-rail-btn {
+  width: 48px;
+  height: 48px;
+  border-radius: 16px;
+  background: var(--mezo-rail);
+  color: var(--mezo-rail-fg);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 6px 16px var(--mezo-shadow-hover);
+  transition:
+    transform 0.15s var(--mezo-ease-out),
+    background 0.15s ease,
+    color 0.15s ease,
+    box-shadow 0.15s ease;
+}
+
+.mezo-rail-btn.is-active {
+  background: var(--mezo-accent);
+  color: var(--mezo-on-accent);
+  box-shadow:
+    0 6px 16px var(--mezo-shadow-hover),
+    0 0 0 2px color-mix(in oklab, var(--mezo-accent) 35%, transparent);
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .mezo-rail-btn:hover {
+    transform: scale(1.06);
+  }
+
+  .mezo-rail-btn.is-active:hover {
+    background: color-mix(in oklab, var(--mezo-accent) 88%, var(--ref-ice));
+  }
+}
+
+.mezo-rail-btn:active {
+  transform: scale(0.95);
+}
+
+.mezo-rail-btn:focus-visible {
+  outline: none;
+  box-shadow:
+    0 6px 16px var(--mezo-shadow-hover),
+    0 0 0 3px color-mix(in oklab, var(--mezo-accent) 45%, transparent);
+}
+
+/* ---------- wealth bar ---------- */
+
+.mezo-wealthbar-wrap {
+  position: relative;
+  flex-shrink: 0;
+  display: flex;
+  justify-content: center;
+  padding: 0 24px 18px;
+  z-index: 6;
+}
+
+.mezo-avatar {
+  position: absolute;
+  top: -26px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 52px;
+  height: 52px;
+  border-radius: 50%;
+  border: 4px solid var(--mezo-bg);
+  background: var(--mezo-avatar-bg);
+  overflow: hidden;
+  z-index: 2;
+}
+
+.mezo-avatar::after {
+  content: '';
+  position: absolute;
+  left: 50%;
+  top: 55%;
+  transform: translate(-50%, -50%);
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  background: var(--mezo-avatar-face);
+  box-shadow: 0 -3px 0 2px color-mix(in oklab, var(--ref-ice) 55%, transparent);
+}
+
+.mezo-wealthbar {
+  position: relative;
+  width: min(760px, 100%);
+  background: var(--mezo-card);
+  border-radius: 18px;
+  padding: 16px 22px 14px;
+  box-shadow: 0 14px 34px var(--mezo-shadow);
+}
+
+.mezo-wealthbar-row {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+}
+
+.mezo-wealth-label {
+  font-size: 11px;
+  color: var(--mezo-muted);
+  margin-bottom: 4px;
+}
+
+.mezo-wealth-value {
+  font-size: 30px;
+  font-weight: 500;
+  letter-spacing: -0.02em;
+  line-height: 1;
+}
+
+.mezo-points {
+  text-align: right;
+}
+
+.mezo-points-value {
+  font-size: 26px;
+  font-weight: 500;
+  letter-spacing: -0.01em;
+  line-height: 1;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.mezo-rewards-icon {
+  color: var(--mezo-ink);
+  flex-shrink: 0;
+  display: inline-flex;
+  align-items: center;
+}
+
+.mezo-ticks {
+  position: relative;
+  height: 8px;
+  margin-top: 14px;
+  border-radius: 4px;
+  overflow: hidden;
+  background: repeating-linear-gradient(
+    90deg,
+    var(--mezo-ticks-track) 0px,
+    var(--mezo-ticks-track) 3px,
+    transparent 3px,
+    transparent 7px
+  );
+}
+
+.mezo-ticks-fill {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  border-radius: 4px;
+  background: var(--mezo-accent);
+}
+
+/* ---------- reduced motion ---------- */
+
+@media (prefers-reduced-motion: reduce) {
+  .mezo-strip-card,
+  .mezo-shared-icon-inner,
+  .mezo-rail-btn {
+    transition: none;
+  }
+
+  .mezo-strip.is-clickable:not(.is-expanded):hover .mezo-strip-card,
+  .mezo-strip.is-clickable:not(.is-expanded):active .mezo-strip-card,
+  .mezo-strip.is-clickable:not(.is-expanded):hover .mezo-shared-icon-inner,
+  .mezo-strip.is-clickable:focus-visible .mezo-strip-card,
+  .mezo-strip.is-clickable:focus-visible .mezo-shared-icon-inner,
+  .mezo-rail-btn:hover {
+    transform: none;
+  }
+}
