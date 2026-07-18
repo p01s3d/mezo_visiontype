@@ -1,9 +1,11 @@
-import { Box, Divider, HStack, VStack } from '@coinbase/cds-web/layout';
+import { Box, HStack, VStack } from '@coinbase/cds-web/layout';
 import { Text } from '@coinbase/cds-web/typography';
 import { Icon } from '@coinbase/cds-web/icons';
-import { DEMO_TRANSACTIONS } from '../../../data/demoTransactions';
+import { DEMO_LP_TRANSACTIONS } from '../../../data/demoLpTransactions';
+import { FilterGroup } from '../../Home/FilterGroup';
 import { HomePressableRow } from '../../Home/HomePressableRow';
-import { TransactionsList } from '../../Home/TransactionsList';
+import { LpTransactionsList } from '../../Home/LpTransactionsList';
+import { DashboardSectionDivider } from '../../Home/TradeRail';
 
 function RecurringBuysRow() {
   return (
@@ -51,12 +53,15 @@ export function TransactionsPreview() {
       </Text>
       <RecurringBuysRow />
 
+      <DashboardSectionDivider />
+
       <Text font="title3" paddingBottom={1} paddingTop={1.5}>
         Activity
       </Text>
-
-      <Divider />
-      <TransactionsList transactions={DEMO_TRANSACTIONS.slice(0, 4)} />
+      <Box paddingBottom={1} width="100%">
+        <FilterGroup />
+      </Box>
+      <LpTransactionsList transactions={DEMO_LP_TRANSACTIONS.slice(0, 2)} />
     </VStack>
   );
-};
+}

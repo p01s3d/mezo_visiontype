@@ -1,6 +1,5 @@
 import { IconButton } from '@coinbase/cds-web/buttons';
-import { Box, Divider, HStack, VStack } from '@coinbase/cds-web/layout';
-import { Pressable } from '@coinbase/cds-web/system';
+import { Box, HStack, VStack } from '@coinbase/cds-web/layout';
 import { Text } from '@coinbase/cds-web/typography';
 import type { WalletToken } from '../../api/walletTypes';
 import type { MarketAsset } from '../../data/marketAssets';
@@ -13,6 +12,8 @@ import { TokenIcon } from './TokenIcon';
 export type PriceRow = MarketAsset & {
   trend: 'up' | 'down' | 'flat';
   iconUrl: string;
+  fungibleId?: string | null;
+  chartSeries?: number[] | null;
 };
 
 type PriceListProps = {
@@ -21,8 +22,14 @@ type PriceListProps = {
   emptyMessage?: string;
 };
 
-export function tokenToPriceRow(token: WalletToken): PriceRow {
-  const changePct = -2.5;
+const PRICE_GRID = 'minmax(0, 1.6fr) minmax(0, 1fr) minmax(72px, 0.9fr) auto';
+const rowGridStyle = { gridTemplateColumns: PRICE_GRID } as const;
+
+export function tokenToPriceRow(
+  token: WalletToken,
+  chart?: { values: number[]; changePct: number } | null,
+): PriceRow {
+  const changePct = chart?.changePct ?? 0;
   return {
     id: token.id,
     name: token.name,
@@ -32,6 +39,8 @@ export function tokenToPriceRow(token: WalletToken): PriceRow {
     iconUrl: token.logoUrl ?? getTokenIconUrl(token.symbol),
     sparkColor: changePct < 0 ? '#CF202F' : '#0052FF',
     trend: changePct < 0 ? 'down' : changePct > 0 ? 'up' : 'flat',
+    fungibleId: token.fungibleId,
+    chartSeries: chart?.values ?? null,
   };
 }
 
@@ -49,7 +58,11 @@ function ChangeCell({ changePct }: { changePct: number }) {
   const arrow = isDown ? '↘' : isUp ? '↗' : '→';
 
   return (
-    <Text color={color} font="label2" style={{ fontVariantNumeric: 'tabular-nums' }}>
+    <Text
+      color={color}
+      font="label2"
+      style={{ fontVariantNumeric: 'tabular-nums', textAlign: 'right' }}
+    >
       {arrow} {formatPercentChange(changePct).replace('+', '')}
     </Text>
   );
@@ -74,81 +87,55 @@ export const PriceList = ({ rows, loading = false, emptyMessage }: PriceListProp
 
   return (
     <VStack gap={0} width="100%">
-      {rows.map((row, index) => (
+      {rows.map((row) => (
         <Box key={row.id} width="100%">
-          {index > 0 ? <Divider /> : null}
           <HomePressableRow
             accessibilityLabel={`${row.name}, ${formatUsd(row.priceUsd)}`}
             paddingY={2}
           >
-            <HStack alignItems="center" gap={2} width="100%">
-              <HStack alignItems="center" flexGrow={1} gap={1.5} minWidth={0}>
+            <Box alignItems="center" display="grid" gap={2} style={rowGridStyle} width="100%">
+              <HStack alignItems="center" gap={1.5} minWidth={0}>
                 <TokenIcon alt={row.name} source={row.iconUrl} symbol={row.symbol} />
-                <VStack gap={0}>
-                  <Text font="headline">{row.name}</Text>
+                <VStack gap={0} minWidth={0}>
+                  <Text font="headline" numberOfLines={1}>
+                    {row.name}
+                  </Text>
                   <Text color="fgMuted" font="label2">
                     {row.symbol}
                   </Text>
                 </VStack>
               </HStack>
 
-              <Box flexShrink={0} width={120}>
-                <Text font="headline" style={{ fontVariantNumeric: 'tabular-nums' }}>
+              <VStack alignItems="flex-end" gap={0} minWidth={0}>
+                <Text font="headline" style={{ fontVariantNumeric: 'tabular-nums', textAlign: 'right' }}>
                   {formatUsd(row.priceUsd)}
                 </Text>
-              </Box>
+                <ChangeCell changePct={row.changePct} />
+              </VStack>
 
-              <Box flexShrink={0} width={80}>
+              <HStack justifyContent="flex-end" width="100%">
                 <PriceSparkline
                   color={row.sparkColor}
                   endValue={row.priceUsd}
                   height={28}
                   seed={row.id}
+                  series={row.chartSeries}
                   trend={row.trend}
                   width={72}
                 />
-              </Box>
-
-              <Box flexShrink={0} width={72}>
-                <ChangeCell changePct={row.changePct} />
-              </Box>
-
-              <HStack alignItems="center" flexShrink={0} gap={1.5}>
-                <Pressable
-                  accessibilityLabel={`Buy ${row.name}`}
-                  background="transparent"
-                  borderRadius={300}
-                  onClick={stopRowPress}
-                  paddingX={1}
-                  paddingY={0.5}
-                >
-                  <Text color="fgPrimary" font="label1">
-                    Buy
-                  </Text>
-                </Pressable>
-                <IconButton
-                  accessibilityLabel="Add to watchlist"
-                  active
-                  color="fgPrimary"
-                  compact
-                  iconSize="s"
-                  name="star"
-                  onClick={stopRowPress}
-                  transparent
-                  variant="secondary"
-                />
-                <IconButton
-                  accessibilityLabel="Reorder"
-                  compact
-                  color="fgMuted"
-                  iconSize="s"
-                  name="drag"
-                  onClick={stopRowPress}
-                  transparent
-                  variant="secondary"
-                />
               </HStack>
-            </HStack>
+
+              <IconButton
+                accessibilityLabel="Reorder"
+                compact
+                color="fgMuted"
+                iconSize="s"
+                name="drag"
+                onClick={stopRowPress}
+                transparent
+                variant="secondary"
+              />
+            </Box>
           </HomePressableRow>
         </Box>
       ))}

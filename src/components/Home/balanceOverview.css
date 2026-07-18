@@ -1,0 +1,72 @@
+.balanceOverview__chartSlot {
+  display: grid;
+  grid-template-rows: 0fr;
+  transition: grid-template-rows 280ms cubic-bezier(0.23, 1, 0.32, 1);
+}
+
+.balanceOverview__chartSlot--open {
+  grid-template-rows: 1fr;
+}
+
+.balanceOverview__chartSlotInner {
+  overflow: hidden;
+  min-height: 0;
+  opacity: 0;
+  transition: opacity 280ms cubic-bezier(0.23, 1, 0.32, 1);
+}
+
+.balanceOverview__chartSlot--open .balanceOverview__chartSlotInner {
+  opacity: 1;
+}
+
+.balanceOverview__miniChart {
+  opacity: 1;
+  transition: opacity 200ms cubic-bezier(0.23, 1, 0.32, 1);
+}
+
+.balanceOverview__miniChart--hidden {
+  opacity: 0;
+  pointer-events: none;
+}
+
+.balanceOverview__miniChartReveal {
+  clip-path: inset(0 100% 0 0);
+  opacity: 0.35;
+  transition:
+    clip-path 800ms cubic-bezier(0.23, 1, 0.32, 1) 120ms,
+    opacity 500ms cubic-bezier(0.23, 1, 0.32, 1) 120ms;
+}
+
+.balanceOverview__miniChartReveal.is-revealed {
+  clip-path: inset(0 0 0 0);
+  opacity: 1;
+}
+
+.balanceOverview__expandedChartReveal {
+  clip-path: inset(0 100% 0 0);
+  opacity: 0.35;
+  transition:
+    clip-path 900ms cubic-bezier(0.23, 1, 0.32, 1) 80ms,
+    opacity 550ms cubic-bezier(0.23, 1, 0.32, 1) 80ms;
+}
+
+.balanceOverview__expandedChartReveal.is-revealed {
+  clip-path: inset(0 0 0 0);
+  opacity: 1;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .balanceOverview__chartSlot {
+    transition: none;
+  }
+  .balanceOverview__chartSlotInner,
+  .balanceOverview__miniChart {
+    transition: opacity 150ms ease;
+  }
+  .balanceOverview__miniChartReveal,
+  .balanceOverview__expandedChartReveal {
+    clip-path: none;
+    opacity: 1;
+    transition: none;
+  }
+}

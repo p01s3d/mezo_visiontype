@@ -26,6 +26,11 @@ export function formatSignedUsd(value: number, direction: 'in' | 'out'): string 
   return `${prefix}${formatUsd(Math.abs(value))}`;
 }
 
+export function formatSignedPnlUsd(value: number): string {
+  const prefix = value >= 0 ? '+' : '-';
+  return `${prefix}${formatUsd(Math.abs(value))}`;
+}
+
 export function formatTransactionDate(isoDate: string): string {
   return new Intl.DateTimeFormat('en-US', {
     month: 'short',

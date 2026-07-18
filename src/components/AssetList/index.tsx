@@ -19,10 +19,7 @@ import type { PersonalPosition, WalletToken } from '../../api/walletTypes';
 import type { Protocol, YieldPool } from '../../api/defillama';
 import { formatApy, formatPercentChange, formatUsd } from '../../utils/format';
 import { filterPools, filterProtocols, type DataView } from '../../utils/defiViews';
-import {
-  getPersonalRowCount,
-  PersonalPositionsTable,
-} from './PersonalPositionsTable';
+import { getPersonalRowCount, PersonalPositionsTable } from './PersonalPositionsTable';
 import { getTokenRowCount, TokenHoldingsTable } from './TokenHoldingsTable';
 
 export type DataSource = 'market' | 'personal' | 'tokens' | 'home' | 'holdings' | 'transactions';
@@ -46,6 +43,7 @@ type AssetListProps = {
   onRefresh: () => void;
   onRefreshPersonal: () => void;
   pageSize: number;
+  isConnected?: boolean;
 };
 
 export const AssetList = ({
@@ -67,6 +65,7 @@ export const AssetList = ({
   onRefresh,
   onRefreshPersonal,
   pageSize,
+  isConnected = false,
 }: AssetListProps) => {
   const [activePage, setActivePage] = useState(1);
   const isPersonal = dataSource === 'personal';
@@ -93,17 +92,17 @@ export const AssetList = ({
   const startIndex = (currentPage - 1) * pageSize;
   const pageRows = isPersonal ? [] : marketRows.slice(startIndex, startIndex + pageSize);
 
-  if (isWalletData && missingApiKey) {
+  if (isWalletData && missingApiKey && isConnected) {
     return (
       <Banner variant="warning" title="Zerion API key required" startIcon="info">
         {apiKeyIssue === 'empty'
-          ? 'Your `.env` has `VITE_ZERION_API_KEY` but the value is empty. Paste your key from dashboard.zerion.io, save, then restart the dev server.'
-          : 'Add your API key to `.env` as `VITE_ZERION_API_KEY`. Get a free key at dashboard.zerion.io, then restart the dev server.'}
+          ? 'Your .env has VITE_ZERION_API_KEY but the value is empty. Paste your key from dashboard.zerion.io, save, then restart the dev server.'
+          : 'Add your API key to .env as VITE_ZERION_API_KEY. Get a free key at dashboard.zerion.io, then restart the dev server.'}
       </Banner>
     );
   }
 
-  const isLoading = isWalletData ? personalLoading : loading;
+  const isLoading = isWalletData ? personalLoading && isConnected : loading;
   const activeError = isWalletData ? personalError : error;
   const activeUpdatedAt = isWalletData ? personalUpdatedAt : updatedAt;
   const onActiveRefresh = isWalletData ? onRefreshPersonal : onRefresh;

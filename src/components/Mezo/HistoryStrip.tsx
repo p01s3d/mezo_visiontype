@@ -107,7 +107,7 @@ export const HistoryStrip = ({
   const sharedTransition = (order: number, arc = false) => {
     if (reduceMotion) return { duration: 0 };
     const delay = order * TIMING.stagger;
-    const color = { duration: 0.32, ease: 'easeOut' as const, delay };
+    const color = { duration: 0.25, ease: TIMING.easeOut, delay };
     if (arc) {
       return {
         x: { ...TIMING.iconSpringX, delay },
@@ -160,8 +160,8 @@ export const HistoryStrip = ({
             ? { duration: 0.15, delay: enterDelay }
             : {
                 delay: enterDelay,
-                opacity: { duration: 0.3, ease: 'easeOut' },
-                scale: { duration: 0.3, ease: 'easeOut' },
+                opacity: { duration: 0.3, ease: TIMING.easeOut },
+                scale: { duration: 0.3, ease: TIMING.easeOut },
               }
         }
       >
@@ -175,14 +175,23 @@ export const HistoryStrip = ({
               <MotionDiv
                 key="meta"
                 className="mezo-strip-meta"
-                initial={{ opacity: 0 }}
+                initial={reduceMotion ? { opacity: 0 } : { opacity: 0, x: 10 }}
                 animate={{
                   opacity: 1,
+                  x: 0,
                   transition: reduceMotion
                     ? { duration: 0.15 }
-                    : { delay: TIMING.reenterDelay, duration: 0.18 },
+                    : { delay: TIMING.reenterDelay, duration: 0.18, ease: TIMING.easeOut },
                 }}
-                exit={{ opacity: 0, transition: { duration: TIMING.exitFast } }}
+                exit={
+                  reduceMotion
+                    ? { opacity: 0, transition: { duration: TIMING.exitFast } }
+                    : {
+                        opacity: 0,
+                        x: 6,
+                        transition: { duration: TIMING.exitFast, ease: TIMING.easeOut },
+                      }
+                }
               >
                 {hasNickname && (
                   <div className="mezo-strip-type" style={{ top: GEOM.collapsed.typeTop }}>
@@ -214,7 +223,7 @@ export const HistoryStrip = ({
             style={{
               fontSize: GEOM.expanded.title.fontSize,
               transformOrigin: 'top left',
-              fontWeight: expanded || !hasNickname ? 500 : 400,
+              fontWeight: expanded || !hasNickname ? 600 : 500,
             }}
           >
             {title}

@@ -22,7 +22,7 @@ export const MAIN_NAV: NavEntry[] = [
 export const EARN_NAV: NavEntry[] = [
   { id: 'lock', title: 'Lock', dataSource: 'market', view: 'staking' },
   { id: 'vote', title: 'Vote', dataSource: 'personal', view: 'protocols' },
-  { id: 'pools', title: 'Pools', dataSource: 'market', view: 'liquidity' },
+  { id: 'pools', title: 'Pools', dataSource: 'personal', view: 'liquidity' },
   { id: 'vaults', title: 'Vaults', dataSource: 'market', view: 'yield' },
 ];
 

@@ -11,6 +11,7 @@ type AssetSelectorListProps = {
   payWithSubtitle: string;
   assetActionLabel: string;
   assetSubtitle: string;
+  assetSymbol?: string;
   bleedX?: 0 | 3;
 };
 
@@ -40,6 +41,7 @@ export const AssetSelectorList = ({
   payWithSubtitle,
   assetActionLabel,
   assetSubtitle,
+  assetSymbol = 'BTC',
   bleedX = 3,
 }: AssetSelectorListProps) => (
   <HStack alignItems="stretch" gap={2} width="100%">
@@ -54,7 +56,7 @@ export const AssetSelectorList = ({
       </VStack>
       <VStack alignItems="center" flexGrow={1} justifyContent="center" minHeight={0} width="100%">
         <Box background="bgLine" flexGrow={1} minHeight={4} width={2} />
-        <TokenIcon size="xl" symbol="BTC" />
+        <TokenIcon size="xl" symbol={assetSymbol} />
       </VStack>
     </VStack>
     <VStack flexGrow={1} gap={0} minWidth={0}>

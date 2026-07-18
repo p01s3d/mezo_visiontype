@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { Button } from '@coinbase/cds-web/buttons';
 import { Chip } from '@coinbase/cds-web/chips';
 import { SelectOption } from '@coinbase/cds-web/controls';
@@ -9,9 +9,9 @@ import { SegmentedTabs } from '@coinbase/cds-web/tabs';
 import { Text } from '@coinbase/cds-web/typography';
 import { Icon } from '@coinbase/cds-web/icons';
 import { useConnection } from 'wagmi';
+import { useTradeIntent, type TradeTab } from '../../hooks/useTradeIntent';
 import { AssetSelectorList } from './AssetSelectorList';
 
-type TradeTab = 'buy' | 'sell' | 'convert';
 type OrderType = 'one-time' | 'recurring';
 
 const TRADE_TABS = [
@@ -28,10 +28,21 @@ const ORDER_TYPES: { value: OrderType; label: string }[] = [
 const COINBASE_BLUE = '#0052FF';
 
 export const TradePanel = ({ bleedX = 3 }: { bleedX?: 0 | 3 }) => {
+  const { intent } = useTradeIntent();
   const [activeTab, setActiveTab] = useState<TradeTab>('buy');
   const [orderType, setOrderType] = useState<OrderType>('one-time');
   const [amount, setAmount] = useState('');
+  const [assetSymbol, setAssetSymbol] = useState('BTC');
+  const [assetLabel, setAssetLabel] = useState('Bitcoin');
   const { isConnected } = useConnection();
+
+  useEffect(() => {
+    if (!intent) return;
+    setActiveTab(intent.tab);
+    setAssetSymbol(intent.assetSymbol);
+    setAssetLabel(intent.assetLabel);
+    setAmount('');
+  }, [intent]);
 
   const activeTabValue = useMemo(
     () => TRADE_TABS.find((tab) => tab.id === activeTab) ?? TRADE_TABS[0],
@@ -130,14 +141,15 @@ export const TradePanel = ({ bleedX = 3 }: { bleedX?: 0 | 3 }) => {
         <HStack alignItems="center" gap={1}>
           <Icon active name="sortDoubleArrow" size="s" style={{ color: COINBASE_BLUE }} />
           <Text font="label2" style={{ color: COINBASE_BLUE }}>
-            {convertedAmount} BTC
+            {convertedAmount} {assetSymbol}
           </Text>
         </HStack>
       </VStack>
 
       <AssetSelectorList
         assetActionLabel={assetActionLabel}
-        assetSubtitle="Bitcoin"
+        assetSubtitle={assetLabel}
+        assetSymbol={assetSymbol}
         bleedX={bleedX}
         payWithLabel="Pay with"
         payWithSubtitle="USD Wallet"

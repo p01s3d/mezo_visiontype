@@ -1,20 +1,39 @@
 export type MezoColorScheme = 'light' | 'dark';
 
-/** Reference palette — brand literals */
+/** RYBitten Apple 90s — duckbutter hero, firewatch + heavenlysky accents */
 export const MEZO_COLORS = {
-  blackStallion: '#0B1D26',
-  bloodlust: '#661717',
-  cuteCrab: '#E1383D',
-  poodleSkirt: '#FDAEC0',
-  everlastingIce: '#F2F8F7',
-  goldenGinkgo: '#FDF43D',
-  militantVegan: '#3C9A5B',
-  smalt: '#1B3E9F',
+  duckbutter: {
+    50: '#f7ecd0',
+    100: '#f3eacf',
+    200: '#e8e2c5',
+    300: '#d2d3ad',
+    400: '#cecb8d',
+    500: '#e1cc62',
+    600: '#f6c735',
+    700: '#d98f17',
+    800: '#975108',
+    900: '#512b08',
+    950: '#1c110a',
+  },
+  firewatch: {
+    50: '#faedcf',
+    100: '#f9eaca',
+    500: '#f08665',
+    600: '#cc5a54',
+    700: '#844667',
+    800: '#4e3154',
+    900: '#2d2433',
+    950: '#131315',
+  },
+  heavenlysky: {
+    50: '#faeccf',
+    500: '#6c91ad',
+    600: '#2384ba',
+    700: '#437e76',
+    800: '#466034',
+    900: '#283518',
+  },
 } as const;
-
-/** Derived neutrals (oklab mixes — keep in sync with mezo.css semantics) */
-const MUTED_LIGHT = '#5a6b75';
-const MUTED_DARK = '#b8c5c9';
 
 /** JS-side tokens for animated SVG/chart elements */
 export const MEZO_PALETTE: Record<
@@ -32,25 +51,25 @@ export const MEZO_PALETTE: Record<
   }
 > = {
   light: {
-    ink: MEZO_COLORS.blackStallion,
-    mutedTitle: MUTED_LIGHT,
-    collapsedAmount: MEZO_COLORS.blackStallion,
-    expandedAmount: MUTED_LIGHT,
-    tileIcon: MEZO_COLORS.everlastingIce,
-    badgeIcon: MEZO_COLORS.everlastingIce,
-    chartStroke: MEZO_COLORS.smalt,
-    chartFillStart: 'rgba(27, 62, 159, 0.22)',
-    chartMarkerFill: MEZO_COLORS.everlastingIce,
+    ink: MEZO_COLORS.duckbutter[950],
+    mutedTitle: MEZO_COLORS.duckbutter[800],
+    collapsedAmount: MEZO_COLORS.duckbutter[900],
+    expandedAmount: MEZO_COLORS.duckbutter[800],
+    tileIcon: MEZO_COLORS.duckbutter[50],
+    badgeIcon: MEZO_COLORS.duckbutter[50],
+    chartStroke: MEZO_COLORS.duckbutter[700],
+    chartFillStart: 'rgba(217, 143, 23, 0.28)',
+    chartMarkerFill: MEZO_COLORS.duckbutter[50],
   },
   dark: {
-    ink: MEZO_COLORS.everlastingIce,
-    mutedTitle: MUTED_DARK,
-    collapsedAmount: MEZO_COLORS.everlastingIce,
-    expandedAmount: MUTED_DARK,
-    tileIcon: MEZO_COLORS.everlastingIce,
-    badgeIcon: MEZO_COLORS.everlastingIce,
-    chartStroke: MEZO_COLORS.smalt,
-    chartFillStart: 'rgba(27, 62, 159, 0.32)',
-    chartMarkerFill: MEZO_COLORS.blackStallion,
+    ink: MEZO_COLORS.duckbutter[50],
+    mutedTitle: MEZO_COLORS.duckbutter[300],
+    collapsedAmount: MEZO_COLORS.duckbutter[100],
+    expandedAmount: MEZO_COLORS.duckbutter[300],
+    tileIcon: MEZO_COLORS.duckbutter[50],
+    badgeIcon: MEZO_COLORS.duckbutter[50],
+    chartStroke: MEZO_COLORS.duckbutter[500],
+    chartFillStart: 'rgba(225, 204, 98, 0.28)',
+    chartMarkerFill: MEZO_COLORS.duckbutter[950],
   },
 };

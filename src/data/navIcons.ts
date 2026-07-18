@@ -8,7 +8,7 @@ import vaultsAnimation from '../assets/icons/001 Finance/01 Stroke (Regular)/str
 import marketAnimation from '../assets/icons/002 Commerce/01 Stroke (Regular)/shop.json';
 import exploreAnimation from '../assets/icons/003 Location/01 Stroke (Regular)/discover.json';
 import poolsAnimation from '../assets/icons/030 Weather/01 Stroke (Regular)/wind-2.json';
-import rewardsAnimation from '../assets/icons/023 Power/01 Stroke (Regular)/flash.json';
+import rewardsAnimation from '../assets/icons/023 Power/01 Stroke (Regular)/flash-circle.json';
 import voteAnimation from '../assets/icons/024 warning check/01 Stroke (Regular)/tick-square.json';
 
 export type NavAnimation = LottieComponentProps['animationData'];

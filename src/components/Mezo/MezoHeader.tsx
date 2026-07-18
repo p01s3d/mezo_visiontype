@@ -6,7 +6,7 @@ export const MezoHeader = () => (
       <span className="mezo-wordmark-mark">
         <PortfolioMark size={22} />
       </span>
-      <span>Portfolio</span>
+      <span>Get Ahead</span>
     </div>
   </header>
 );

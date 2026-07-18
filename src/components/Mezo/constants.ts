@@ -24,6 +24,8 @@ export const TIMING = {
   iconSpringY: { type: 'spring' as const, stiffness: 120, damping: 28, mass: 0.9 },
   iconSpringX: { type: 'spring' as const, stiffness: 200, damping: 24, mass: 0.9 },
   tileSpring: { type: 'spring' as const, stiffness: 300, damping: 22 },
+  /** Strong ease-out — matches --mezo-ease-out in mezo.css */
+  easeOut: [0.23, 1, 0.32, 1] as const,
   /** per-shared-element delay: icon 0, title 1, amount 2 */
   stagger: 0.04,
   exitFast: 0.1,
@@ -68,7 +70,7 @@ export const GEOM = {
     /** center of the loan badge (bottom-right of the tile) */
     badgeCenter: { left: 130, top: 130 },
     badgeIconScale: 13 / 40,
-    title: { left: 32, top: 160, fontSize: 34 },
-    amount: { left: 32, top: 214, fontSize: 19 },
+    title: { left: 32, top: 160, fontSize: 38 },
+    amount: { left: 32, top: 218, fontSize: 20 },
   },
 };

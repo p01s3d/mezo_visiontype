@@ -6,7 +6,6 @@ import { formatSignedUsd, formatTransactionDate, formatUsd } from '../../utils/f
 import { formatTokenAmount } from '../../utils/tokenHoldings';
 import {
   DashboardTableList,
-  DashboardTableRowDivider,
   dashboardTableGridStyle,
 } from './DashboardTableList';
 import { HomePressableRow } from './HomePressableRow';
@@ -111,9 +110,8 @@ export const TransactionsList = ({
       loading={loading}
       showEmpty={isEmpty}
     >
-      {transactions.map((transaction, index) => (
+      {transactions.map((transaction) => (
         <Box key={transaction.id} width="100%">
-          <DashboardTableRowDivider show={index > 0} />
           <TransactionsListRow transaction={transaction} />
         </Box>
       ))}

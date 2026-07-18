@@ -1,0 +1,48 @@
+import type { LpTransaction } from '../api/walletTypes';
+
+export const DEMO_LP_TRANSACTIONS: LpTransaction[] = [
+  {
+    id: 'demo-lp-tx-1',
+    title: 'Added liquidity',
+    protocol: 'Uniswap V3',
+    poolLabel: 'ETH / USDC',
+    operationType: 'deposit',
+    amountUsd: 450,
+    date: '2024-11-02T11:30:00.000Z',
+    direction: 'out',
+    chain: 'ethereum',
+  },
+  {
+    id: 'demo-lp-tx-2',
+    title: 'Claimed fees',
+    protocol: 'Uniswap V3',
+    poolLabel: 'ETH / USDC',
+    operationType: 'claim',
+    amountUsd: 12.4,
+    date: '2024-10-28T09:15:00.000Z',
+    direction: 'in',
+    chain: 'ethereum',
+  },
+  {
+    id: 'demo-lp-tx-3',
+    title: 'Added liquidity',
+    protocol: 'Curve',
+    poolLabel: '3pool',
+    operationType: 'deposit',
+    amountUsd: 200,
+    date: '2024-10-22T16:45:00.000Z',
+    direction: 'out',
+    chain: 'ethereum',
+  },
+  {
+    id: 'demo-lp-tx-4',
+    title: 'Removed liquidity',
+    protocol: 'Uniswap V3',
+    poolLabel: 'ETH / USDC',
+    operationType: 'withdraw',
+    amountUsd: 85,
+    date: '2024-10-15T14:20:00.000Z',
+    direction: 'in',
+    chain: 'ethereum',
+  },
+];

@@ -1,13 +1,16 @@
 import { Box, HStack, VStack } from '@coinbase/cds-web/layout';
 import { Text } from '@coinbase/cds-web/typography';
 import type { WalletToken } from '../../api/walletTypes';
+import type { PositionVerdict } from '../../types/positionHealth';
 import { formatUsd } from '../../utils/format';
 import { formatTokenAmount } from '../../utils/tokenHoldings';
 import {
   DashboardTableList,
-  DashboardTableRowDivider,
+  DashboardTablePagination,
   dashboardTableGridStyle,
+  useDashboardListPagination,
 } from './DashboardTableList';
+import { HealthIndicator, verdictTooltip } from './HealthIndicator';
 import { HomePressableRow } from './HomePressableRow';
 import { TokenIcon } from './TokenIcon';
 
@@ -25,16 +28,20 @@ type HoldingsListProps = {
   loading?: boolean;
   isConnected?: boolean;
   emptyMessage?: string;
+  pageSize?: number;
+  verdictsByPositionId?: Record<string, PositionVerdict>;
 };
 
 function HoldingsListRow({
   token,
   loading,
   isConnected,
+  verdict,
 }: {
   token: WalletToken;
   loading: boolean;
   isConnected: boolean;
+  verdict?: PositionVerdict;
 }) {
   return (
     <HomePressableRow
@@ -45,10 +52,15 @@ function HoldingsListRow({
       <Box alignItems="center" display="grid" gap={2} style={rowGridStyle} width="100%">
         <HStack alignItems="center" gap={1.5} minWidth={0}>
           <TokenIcon alt={token.name} source={token.logoUrl} symbol={token.symbol} />
-          <VStack gap={0} minWidth={0}>
-            <Text font="headline" numberOfLines={1}>
-              {token.name}
-            </Text>
+          <VStack gap={0.5} minWidth={0}>
+            <HStack alignItems="center" flexWrap="wrap" gap={1}>
+              <Text font="headline" numberOfLines={1}>
+                {token.name}
+              </Text>
+              {verdict ? (
+                <HealthIndicator tooltip={verdictTooltip(verdict)} verdict={verdict.verdict} />
+              ) : null}
+            </HStack>
             <Text color="fgMuted" font="label2">
               {token.symbol}
             </Text>
@@ -79,23 +91,40 @@ export const HoldingsList = ({
   loading = false,
   isConnected = false,
   emptyMessage,
+  pageSize,
+  verdictsByPositionId = {},
 }: HoldingsListProps) => {
   const isEmpty = tokens.length === 0;
+  const { pageItems, activePage, totalPages, setActivePage } = useDashboardListPagination(
+    tokens,
+    pageSize,
+  );
 
   return (
-    <DashboardTableList
-      columns={HOLDINGS_COLUMNS}
-      emptyMessage={emptyMessage ?? 'Loading holdings…'}
-      gridTemplateColumns={HOLDINGS_GRID}
-      loading={loading}
-      showEmpty={isEmpty}
-    >
-      {tokens.map((token, index) => (
-        <Box key={token.id} width="100%">
-          <DashboardTableRowDivider show={index > 0} />
-          <HoldingsListRow isConnected={isConnected} loading={loading} token={token} />
-        </Box>
-      ))}
-    </DashboardTableList>
+    <VStack gap={0} width="100%">
+      <DashboardTableList
+        columns={HOLDINGS_COLUMNS}
+        emptyMessage={emptyMessage ?? 'Loading holdings…'}
+        gridTemplateColumns={HOLDINGS_GRID}
+        loading={loading}
+        showEmpty={isEmpty}
+      >
+        {pageItems.map((token) => (
+          <Box key={token.id} width="100%">
+            <HoldingsListRow
+              isConnected={isConnected}
+              loading={loading}
+              token={token}
+              verdict={verdictsByPositionId[token.id]}
+            />
+          </Box>
+        ))}
+      </DashboardTableList>
+      <DashboardTablePagination
+        activePage={activePage}
+        onChange={setActivePage}
+        totalPages={totalPages}
+      />
+    </VStack>
   );
 };

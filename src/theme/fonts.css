@@ -10,4 +10,11 @@
     height: 100%;
     overflow: hidden;
   }
+
+  /* Banner body can receive non-string React children and skip CDS Text — force app typeface. */
+  .cds-Banner,
+  .cds-Banner-content,
+  .cds-Banner-middle {
+    font-family: var(--defaultFont-sans);
+  }
 }

@@ -20,14 +20,14 @@ function useDetailVariants() {
       y: 0,
       transition: reduceMotion
         ? { duration: 0.15 }
-        : { delay: enterDelay, duration: 0.25, ease: 'easeOut' as const },
+        : { delay: enterDelay, duration: 0.25, ease: TIMING.easeOut },
     },
     exit: reduceMotion
       ? { opacity: 0, transition: { duration: 0.1 } }
       : {
           opacity: 0,
           y: TIMING.exitSink,
-          transition: { duration: TIMING.exitContent, ease: 'easeIn' as const },
+          transition: { duration: TIMING.exitContent, ease: TIMING.easeOut },
         },
   });
 
@@ -50,7 +50,7 @@ const Schedule = ({ detail, baseDelay }: { detail: LoanDetail; baseDelay: number
               transition: {
                 delay: baseDelay + i * TIMING.innerStagger,
                 duration: 0.2,
-                ease: 'easeOut',
+                ease: TIMING.easeOut,
               },
             }}
           >
@@ -105,7 +105,7 @@ const StatusRows = ({
             transition: {
               delay: baseDelay + i * TIMING.innerStagger,
               duration: 0.2,
-              ease: 'easeOut',
+              ease: TIMING.easeOut,
             },
           }}
         >
@@ -134,7 +134,7 @@ const LoanHealth = ({ detail, baseDelay }: { detail: LoanDetail; baseDelay: numb
       animate={{
         opacity: 1,
         y: 0,
-        transition: { delay: baseDelay, duration: 0.2, ease: 'easeOut' },
+        transition: { delay: baseDelay, duration: 0.2, ease: TIMING.easeOut },
       }}
     >
       <div className="mezo-health-header">
@@ -193,7 +193,7 @@ export const StripDetail = ({ action }: { action: MezoAction }) => {
           },
           exit: reduceMotion
             ? { opacity: 0 }
-            : { opacity: 0, scale: 0.9, transition: { duration: TIMING.exitContent, ease: 'easeIn' } },
+            : { opacity: 0, scale: 0.9, transition: { duration: TIMING.exitContent, ease: TIMING.easeOut } },
         }}
       >
         {isLoan && <GiftIcon />}

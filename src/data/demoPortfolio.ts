@@ -5,6 +5,7 @@ export const DEMO_NET_WORTH_USD = 12_847.52;
 export const DEMO_WALLET_TOKENS: WalletToken[] = [
   {
     id: 'demo-btc',
+    fungibleId: 'demo-btc-fungible',
     chain: 'ethereum',
     name: 'Bitcoin',
     symbol: 'BTC',
@@ -13,9 +14,11 @@ export const DEMO_WALLET_TOKENS: WalletToken[] = [
     valueUsd: 11_003.34,
     logoUrl: 'https://assets.coincap.io/assets/icons/btc@2x.png',
     isCore: true,
+    change24hPercent: 1.8,
   },
   {
     id: 'demo-eth',
+    fungibleId: 'demo-eth-fungible',
     chain: 'ethereum',
     name: 'Ethereum',
     symbol: 'ETH',
@@ -24,9 +27,11 @@ export const DEMO_WALLET_TOKENS: WalletToken[] = [
     valueUsd: 1_209.64,
     logoUrl: 'https://assets.coincap.io/assets/icons/eth@2x.png',
     isCore: true,
+    change24hPercent: 2.4,
   },
   {
     id: 'demo-usdc',
+    fungibleId: 'demo-usdc-fungible',
     chain: 'ethereum',
     name: 'USDC',
     symbol: 'USDC',
@@ -35,9 +40,11 @@ export const DEMO_WALLET_TOKENS: WalletToken[] = [
     valueUsd: 520,
     logoUrl: 'https://assets.coincap.io/assets/icons/usdc@2x.png',
     isCore: true,
+    change24hPercent: 0.01,
   },
   {
     id: 'demo-link',
+    fungibleId: 'demo-link-fungible',
     chain: 'ethereum',
     name: 'Chainlink',
     symbol: 'LINK',
@@ -46,5 +53,6 @@ export const DEMO_WALLET_TOKENS: WalletToken[] = [
     valueUsd: 114.7,
     logoUrl: null,
     isCore: false,
+    change24hPercent: -3.6,
   },
 ];

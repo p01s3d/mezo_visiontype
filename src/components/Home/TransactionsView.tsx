@@ -1,17 +1,22 @@
-import { Box, Divider, HStack, VStack } from '@coinbase/cds-web/layout';
+import { Banner } from '@coinbase/cds-web/banner';
+import { Box, HStack, VStack } from '@coinbase/cds-web/layout';
 import { Text } from '@coinbase/cds-web/typography';
 import { Icon } from '@coinbase/cds-web/icons';
-import { DEMO_TRANSACTIONS } from '../../data/demoTransactions';
+import type { LpTransaction } from '../../api/walletTypes';
+import { DEMO_LP_TRANSACTIONS } from '../../data/demoLpTransactions';
 import { FilterGroup } from './FilterGroup';
 import { HomePressableRow } from './HomePressableRow';
-import { DashboardWithTradeRail } from './TradeRail';
-import { TransactionsList } from './TransactionsList';
+import { LpTransactionsList } from './LpTransactionsList';
+import { DashboardSectionDivider, DashboardWithTradeRail } from './TradeRail';
 
 const CONTENT_PADDING_X = 2;
 
 type TransactionsViewProps = {
+  lpTransactions: LpTransaction[];
   loading?: boolean;
   isConnected?: boolean;
+  flaggedTransactionIds?: Set<string>;
+  riskyDepositCount?: number;
 };
 
 function RecurringBuysRow() {
@@ -52,8 +57,14 @@ function RecurringBuysRow() {
   );
 }
 
-export const TransactionsView = ({ loading = false, isConnected = false }: TransactionsViewProps) => {
-  const transactions = DEMO_TRANSACTIONS;
+export const TransactionsView = ({
+  lpTransactions,
+  loading = false,
+  isConnected = false,
+  flaggedTransactionIds = new Set(),
+  riskyDepositCount = 0,
+}: TransactionsViewProps) => {
+  const transactions = isConnected ? lpTransactions : DEMO_LP_TRANSACTIONS;
 
   return (
     <DashboardWithTradeRail>
@@ -65,25 +76,34 @@ export const TransactionsView = ({ loading = false, isConnected = false }: Trans
           <RecurringBuysRow />
         </Box>
 
+        <DashboardSectionDivider />
+
         <Box paddingTop={3} paddingX={CONTENT_PADDING_X} width="100%">
           <Text font="title3">Activity</Text>
         </Box>
+        {riskyDepositCount > 0 ? (
+          <Box padding={CONTENT_PADDING_X} width="100%">
+            <Banner startIcon="warning" title="Recent deposits into at-risk pools" variant="warning">
+              {`${riskyDepositCount} recent LP deposit${riskyDepositCount === 1 ? '' : 's'} landed in positions flagged reduce or exit.`}
+            </Banner>
+          </Box>
+        ) : null}
         <Box paddingX={CONTENT_PADDING_X} width="100%">
           <FilterGroup />
         </Box>
 
         <VStack gap={0} paddingX={CONTENT_PADDING_X} width="100%">
-          <Divider />
-          <TransactionsList
+          <LpTransactionsList
             emptyMessage={
-              isConnected ? 'No transactions found for this wallet.' : 'Connect wallet to see your transactions.'
+              isConnected ? 'No liquidity activity found for this wallet.' : 'No liquidity activity yet.'
             }
+            flaggedTransactionIds={flaggedTransactionIds}
             loading={loading && isConnected}
             transactions={transactions}
           />
           {!isConnected ? (
             <Text color="fgMuted" font="label2" paddingBottom={3}>
-              Showing sample activity — connect wallet to see yours
+              Showing sample LP activity — connect wallet to see yours
             </Text>
           ) : null}
         </VStack>

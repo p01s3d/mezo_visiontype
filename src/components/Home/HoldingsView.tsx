@@ -1,5 +1,5 @@
-import { useMemo, useState } from 'react';
-import { Box, Divider, HStack, VStack } from '@coinbase/cds-web/layout';
+import { useEffect, useMemo, useState } from 'react';
+import { Box, HStack, VStack } from '@coinbase/cds-web/layout';
 import { Pressable } from '@coinbase/cds-web/system';
 import { Text } from '@coinbase/cds-web/typography';
 import type { WalletToken } from '../../api/walletTypes';
@@ -11,9 +11,11 @@ import {
   TOKEN_CATEGORY_TAB_LABELS,
   type TokenCategory,
 } from '../../utils/tokenCategories';
-import { formatUsd } from '../../utils/format';
+import type { PositionVerdict } from '../../types/positionHealth';
+import { DASHBOARD_LIST_PAGE_SIZE } from './DashboardTableList';
+import { RollingUsdBalance } from './RollingUsdBalance';
 import { HoldingsList } from './HoldingsList';
-import { DashboardWithTradeRail } from './TradeRail';
+import { DashboardSectionDivider, DashboardWithTradeRail } from './TradeRail';
 
 const CONTENT_PADDING_X = 2;
 
@@ -22,6 +24,9 @@ type HoldingsViewProps = {
   totalBalanceUsd: number | null;
   loading: boolean;
   isConnected: boolean;
+  verdictsByPositionId?: Record<string, PositionVerdict>;
+  /** When set (e.g. from Home allocation), select this tab. */
+  initialCategory?: TokenCategory | null;
 };
 
 function defaultCategory(groups: Record<TokenCategory, WalletToken[]>): TokenCategory {
@@ -38,17 +43,16 @@ function CategoryTab({
   onSelect: () => void;
 }) {
   return (
-    <Pressable onClick={onSelect} paddingBottom={1} paddingTop={0.5}>
-      <VStack gap={0.75}>
+    <Pressable onClick={onSelect} paddingTop={0.5}>
+      <VStack gap={0.75} width="100%">
         <Text color={active ? 'fg' : 'fgMuted'} font="headline">
           {label}
         </Text>
-        <Box
-          background={active ? 'fgPrimary' : 'transparent'}
-          borderRadius={1000}
-          height={2}
-          width="100%"
-        />
+        {active ? (
+          <Box background="fgPrimary" borderRadius={1000} height={2} width="100%" />
+        ) : (
+          <Box height={2} width="100%" />
+        )}
       </VStack>
     </Pressable>
   );
@@ -59,10 +63,20 @@ export const HoldingsView = ({
   totalBalanceUsd,
   loading,
   isConnected,
+  verdictsByPositionId = {},
+  initialCategory = null,
 }: HoldingsViewProps) => {
   const tokens = isConnected ? walletTokens : DEMO_WALLET_TOKENS;
   const groups = groupTokensByCategory(tokens);
-  const [activeCategory, setActiveCategory] = useState<TokenCategory>(() => defaultCategory(groups));
+  const [activeCategory, setActiveCategory] = useState<TokenCategory>(
+    () => initialCategory ?? defaultCategory(groups),
+  );
+
+  useEffect(() => {
+    if (initialCategory) {
+      setActiveCategory(initialCategory);
+    }
+  }, [initialCategory]);
 
   const displayTotal = isConnected ? (totalBalanceUsd ?? portfolioTotalUsd(tokens)) : DEMO_NET_WORTH_USD;
   const activeTokens = groups[activeCategory];
@@ -74,16 +88,20 @@ export const HoldingsView = ({
   );
   const content = isConnected && tokens.length === 0 && !loading ? (
     <VStack gap={0} paddingX={CONTENT_PADDING_X} paddingY={3} width="100%">
-      <Text font="display2">{formatUsd(0)}</Text>
+      <RollingUsdBalance font="display2" value={totalBalanceUsd ?? 0} />
       <Text color="fgMuted" font="label2" paddingTop={2}>
         No token holdings found for this wallet.
       </Text>
     </VStack>
   ) : (
     <VStack gap={0} width="100%">
-      <Box paddingBottom={2} paddingTop={2} paddingX={CONTENT_PADDING_X}>
+      <Box paddingBottom={2} paddingTop={2} paddingX={CONTENT_PADDING_X} width="100%">
         <VStack gap={0.5} width="100%">
-          <Text font="display2">{loading && isConnected ? '…' : formatUsd(displayTotal)}</Text>
+          <RollingUsdBalance
+            font="display2"
+            loading={loading && isConnected}
+            value={displayTotal}
+          />
           {!isConnected ? (
             <Text color="fgMuted" font="label2">
               Sample portfolio — connect wallet to see yours
@@ -92,15 +110,8 @@ export const HoldingsView = ({
         </VStack>
       </Box>
 
-      <HStack
-        alignItems="flex-end"
-        gap={2}
-        justifyContent="space-between"
-        paddingBottom={1.5}
-        paddingX={CONTENT_PADDING_X}
-        width="100%"
-      >
-        <HStack alignItems="flex-end" flexGrow={1} gap={3} minWidth={0}>
+      <Box paddingX={CONTENT_PADDING_X} width="100%">
+        <HStack alignItems="flex-end" gap={3} width="100%">
           {visibleTabs.map((category) => (
             <CategoryTab
               key={category}
@@ -110,18 +121,28 @@ export const HoldingsView = ({
             />
           ))}
         </HStack>
-        <Text flexShrink={0} font="title3" style={{ fontVariantNumeric: 'tabular-nums', paddingBottom: 4 }}>
-          {loading && isConnected ? '…' : formatUsd(categoryTotal)}
-        </Text>
-      </HStack>
+      </Box>
+
+      <Box style={{ marginTop: -1 }} width="100%">
+        <DashboardSectionDivider />
+      </Box>
 
       <VStack gap={0} paddingX={CONTENT_PADDING_X} width="100%">
-        <Divider />
+        <Box paddingBottom={1} paddingTop={2} width="100%">
+          <RollingUsdBalance
+            font="title2"
+            loading={loading && isConnected}
+            style={{ fontVariantNumeric: 'tabular-nums', fontWeight: 300 }}
+            value={categoryTotal}
+          />
+        </Box>
         <HoldingsList
           emptyMessage="No assets in this category."
           isConnected={isConnected}
           loading={loading}
+          pageSize={activeCategory === 'defi' ? DASHBOARD_LIST_PAGE_SIZE : undefined}
           tokens={activeTokens}
+          verdictsByPositionId={verdictsByPositionId}
         />
       </VStack>
     </VStack>

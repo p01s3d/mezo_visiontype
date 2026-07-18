@@ -18,6 +18,9 @@ export type Protocol = {
   chain: string;
   tvl: number;
   slug: string;
+  change1d: number | null;
+  change7d: number | null;
+  logo: string | null;
 };
 
 type YieldPoolsResponse = {
@@ -51,16 +54,22 @@ export async function fetchProtocols(): Promise<Protocol[]> {
     chain: string;
     tvl: number;
     slug: string;
+    change_1d?: number | null;
+    change_7d?: number | null;
+    logo?: string | null;
   }>;
 
   return json
     .filter((protocol) => protocol.tvl > 0 && protocol.category !== 'CEX')
-    .map(({ id, name, category, chain, tvl, slug }) => ({
+    .map(({ id, name, category, chain, tvl, slug, change_1d, change_7d, logo }) => ({
       id,
       name,
       category,
       chain,
       tvl,
       slug,
+      change1d: typeof change_1d === 'number' && Number.isFinite(change_1d) ? change_1d : null,
+      change7d: typeof change_7d === 'number' && Number.isFinite(change_7d) ? change_7d : null,
+      logo: logo ?? null,
     }));
 }

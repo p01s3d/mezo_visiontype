@@ -35,6 +35,7 @@ export const PREREQUISITES = [
   'Node 22 (see .nvmrc)',
   'Familiarity with CDS component docs at cds.coinbase.com',
   'Optional: Zerion API key for wallet positions (VITE_ZERION_API_KEY in .env)',
+  'Optional: OpenRouter API key for AI verdicts (VITE_OPENROUTER_API_KEY in .env)',
 ];
 
 export const ITERATION_LOOP_STEPS = [
@@ -210,12 +211,12 @@ export const WORKFLOW_PHASES: WorkflowPhase[] = [
   {
     number: 6,
     title: 'Portfolio v1 product pages',
-    summary: 'Shipped My assets and Transactions pages with shared DashboardTableList, FilterGroup, and demo data.',
+    summary: 'Shipped My assets, LP Transactions, and Pools pages with shared DashboardTableList, FilterGroup, and Zerion wallet data.',
     steps: [
       {
         id: '6.1',
         action: 'Group holdings by Cash / Crypto / DeFi via tokenCategories.ts',
-        outcome: 'Category tabs, totals, demo portfolio when disconnected',
+        outcome: 'Category tabs, totals below tabs, demo portfolio when disconnected',
       },
       {
         id: '6.2',
@@ -229,12 +230,17 @@ export const WORKFLOW_PHASES: WorkflowPhase[] = [
       },
       {
         id: '6.4',
-        action: 'Transactions page from Coinbase activity screenshot',
-        outcome: 'Manage row, FilterGroup chips, TransactionsList — Details, Amount, Date',
+        action: 'Transactions page — LP-only activity from Zerion',
+        outcome: 'Manage row, divider above Activity, LpTransactionsList',
       },
       {
         id: '6.5',
-        action: 'Persist trade rail on Home, My assets, and Transactions',
+        action: 'Pools page — grouped liquidity positions with unrealized PnL',
+        outcome: 'PoolsView + PoolsList — total balance, Pool · Value · PnL',
+      },
+      {
+        id: '6.6',
+        action: 'Persist trade rail on Home, My assets, Transactions, and Pools',
         outcome: 'DashboardWithTradeRail shared layout wrapper',
       },
     ],
@@ -242,14 +248,66 @@ export const WORKFLOW_PHASES: WorkflowPhase[] = [
       'src/components/Home/HoldingsView.tsx',
       'src/components/Home/HoldingsList.tsx',
       'src/components/Home/TransactionsView.tsx',
-      'src/components/Home/TransactionsList.tsx',
+      'src/components/Home/LpTransactionsList.tsx',
+      'src/components/Home/PoolsView.tsx',
+      'src/components/Home/PoolsList.tsx',
       'src/components/Home/DashboardTableList.tsx',
       'src/components/Home/FilterGroup.tsx',
+      'src/utils/groupPoolPositions.ts',
+      'src/utils/poolPnl.ts',
       'src/utils/portfolioNudges.ts',
       'src/utils/tokenCategories.ts',
-      'src/data/demoTransactions.ts',
+      'src/data/demoLpTransactions.ts',
+      'src/data/demoPools.ts',
     ],
     cdsComponents: ['VStack', 'HStack', 'Divider', 'Pressable', 'Text', 'Dropdown'],
+  },
+  {
+    number: 7,
+    title: 'AI position health',
+    summary:
+      'Joined Zerion positions to DefiLlama signals, ranked candidates with rules, and called OpenRouter on Home load for Hold / Reduce / Exit cards plus Chip badges across the portfolio.',
+    steps: [
+      {
+        id: '7.1',
+        action: 'Join wallet LP / tokens to DefiLlama pools via matchPoolToDefiLlama',
+        outcome: 'Market APY, TVL, and 24h change available per position',
+      },
+      {
+        id: '7.2',
+        action: 'Rule pre-filter in healthSignals.ts → HealthCandidate list',
+        outcome: 'Only risky or opportunity-rich positions reach the model',
+      },
+      {
+        id: '7.3',
+        action: 'OpenRouter client + positionVerdictPrompt (≤4 calls, session cache)',
+        outcome: 'JSON Hold / Reduce / Exit with short reasoning',
+      },
+      {
+        id: '7.4',
+        action: 'ForYouSection verdict cards + HealthIndicator on lists',
+        outcome: 'Home cards, holdings/pools chips, risky-deposit Banner',
+      },
+      {
+        id: '7.5',
+        action: 'protocolLinks + dismiss/refetch via verdictSessionCache',
+        outcome: 'DEX deep links and dismissible cards without refetch spam',
+      },
+    ],
+    keyFiles: [
+      'src/hooks/usePositionHealth.ts',
+      'src/utils/healthSignals.ts',
+      'src/utils/matchPoolToDefiLlama.ts',
+      'src/api/openrouter.ts',
+      'src/prompts/positionVerdictPrompt.ts',
+      'src/components/Home/ForYouSection.tsx',
+      'src/components/Home/ForYouCard.tsx',
+      'src/components/Home/HealthIndicator.tsx',
+      'src/data/demoVerdicts.ts',
+      'src/utils/protocolLinks.ts',
+      'src/utils/verdictSessionCache.ts',
+    ],
+    cdsComponents: ['Chip', 'Banner', 'Tooltip', 'Pictogram', 'Pressable', 'Button'],
   },
 ];
 
@@ -272,7 +330,12 @@ export const ITERATION_ROWS: IterationRow[] = [
   {
     iteration: 'Transactions',
     reference: 'Coinbase activity screenshot',
-    built: 'TransactionsView — filters, signed amounts, dates',
+    built: 'TransactionsView — LP-only feed, divider above Activity',
+  },
+  {
+    iteration: 'Pools',
+    reference: 'Zerion grouped LP positions',
+    built: 'PoolsView — total balance, PoolsList with unrealized PnL',
   },
   {
     iteration: 'Trade rail',
@@ -282,7 +345,12 @@ export const ITERATION_ROWS: IterationRow[] = [
   {
     iteration: 'Market data',
     reference: 'DefiLlama + Zerion APIs',
-    built: 'AssetList tables, wallet positions',
+    built: 'AssetList tables, wallet tokens and LP positions',
+  },
+  {
+    iteration: 'AI health',
+    reference: 'OpenRouter + Zerion charts + DefiLlama',
+    built: 'CDS bento health cards; OpenRouter calibrates arcs + performance copy',
   },
   {
     iteration: 'Polish',
@@ -296,22 +364,38 @@ export const COMPONENT_MAP: ComponentMapRow[] = [
   { region: 'Sidebar', file: 'src/components/Sidebar/DefiSidebar.tsx', cds: 'Sidebar, Tooltip' },
   { region: 'Navbar', file: 'src/components/Navbar/index.tsx', cds: 'NavigationBar, IconButton' },
   { region: 'Home dashboard', file: 'src/components/Home/HomeDashboard.tsx', cds: 'Banner, Divider, VStack' },
-  { region: 'Balance + chart', file: 'src/components/Home/BalanceOverview.tsx', cds: 'Sparkline, Text, HStack' },
+  { region: 'Balance + chart', file: 'src/components/Home/BalanceOverview.tsx', cds: 'CompactLineChart, RollingUsdBalance' },
   { region: 'Allocation', file: 'src/components/Home/BalanceBreakdown.tsx', cds: 'Pressable, Text, HStack' },
-  { region: 'For you', file: 'src/components/Home/ForYouSection.tsx', cds: 'Pressable, Pictogram, HStack' },
+  { region: 'Portfolio health', file: 'src/components/Home/HealthScorePanel.tsx', cds: 'Custom bento (dark) + Banner' },
+  { region: 'Health score logic', file: 'src/utils/portfolioHealthScore.ts', cds: '— (logic only)' },
+  { region: 'In-app alerts', file: 'src/utils/healthAlerts.ts', cds: 'Toast, Tray, NotificationBell' },
+  { region: 'Balance charts', file: 'src/hooks/useWalletBalanceChart.ts', cds: 'CompactLineChart overlay' },
   { region: 'Prices table', file: 'src/components/Home/PricesSection.tsx', cds: 'Dropdown, Divider' },
   { region: 'Price rows', file: 'src/components/Home/PriceList.tsx', cds: 'HomePressableRow, PriceSparkline' },
   { region: 'Trade rail layout', file: 'src/components/Home/TradeRail.tsx', cds: 'HStack, Divider, VStack' },
   { region: 'Trade panel', file: 'src/components/Home/TradePanel.tsx', cds: 'SegmentedTabs, Dropdown, Button' },
   { region: 'Asset selectors', file: 'src/components/Home/AssetSelectorList.tsx', cds: 'TokenIcon, HomePressableRow' },
   { region: 'Quick actions', file: 'src/components/Home/QuickActions.tsx', cds: 'VStack, Pressable' },
-  { region: 'My assets page', file: 'src/components/Home/HoldingsView.tsx', cds: 'Pressable tabs, Divider' },
-  { region: 'Holdings table', file: 'src/components/Home/HoldingsList.tsx', cds: 'DashboardTableList, TokenIcon' },
-  { region: 'Transactions page', file: 'src/components/Home/TransactionsView.tsx', cds: 'FilterGroup, Divider' },
-  { region: 'Activity table', file: 'src/components/Home/TransactionsList.tsx', cds: 'DashboardTableList, Text' },
+  { region: 'My assets page', file: 'src/components/Home/HoldingsView.tsx', cds: 'Pressable tabs, RollingUsdBalance' },
+  { region: 'Holdings table', file: 'src/components/Home/HoldingsList.tsx', cds: 'DashboardTableList, TokenIcon, Chip' },
+  { region: 'Transactions page', file: 'src/components/Home/TransactionsView.tsx', cds: 'FilterGroup, Banner, DashboardSectionDivider' },
+  { region: 'LP activity table', file: 'src/components/Home/LpTransactionsList.tsx', cds: 'DashboardTableList, Chip, Text' },
+  { region: 'Pools page', file: 'src/components/Home/PoolsView.tsx', cds: 'RollingUsdBalance, PoolsList' },
+  { region: 'Pool rows + PnL', file: 'src/components/Home/PoolsList.tsx', cds: 'DashboardTableList, PoolPnlValue, Chip' },
+  { region: 'Pool grouping', file: 'src/utils/groupPoolPositions.ts', cds: '— (logic only)' },
+  { region: 'Pool PnL join', file: 'src/utils/poolPnl.ts', cds: '— (logic only)' },
   { region: 'Shared table grid', file: 'src/components/Home/DashboardTableList.tsx', cds: 'Box grid, Text, Divider' },
   { region: 'Filter chips', file: 'src/components/Home/FilterGroup.tsx', cds: 'Pressable, IconButton' },
   { region: 'Portfolio nudges', file: 'src/utils/portfolioNudges.ts', cds: '— (logic only)' },
+  { region: 'Health join', file: 'src/utils/matchPoolToDefiLlama.ts', cds: '— (logic only)' },
+  { region: 'Health rules', file: 'src/utils/healthSignals.ts', cds: '— (logic only)' },
+  { region: 'Position health', file: 'src/hooks/usePositionHealth.ts', cds: '— (logic only)' },
+  { region: 'Portfolio AI prompt', file: 'src/prompts/portfolioHealthPrompt.ts', cds: '— (logic only)' },
+  { region: 'OpenRouter synthesis', file: 'src/api/openrouter.ts', cds: '— (logic only)' },
+  { region: 'Verdict cache', file: 'src/utils/verdictSessionCache.ts', cds: '— (logic only)' },
+  { region: 'Demo health score', file: 'src/data/demoHealthScore.ts', cds: '— (demo data)' },
+  { region: 'DEX deep links', file: 'src/utils/protocolLinks.ts', cds: '— (logic only)' },
+  { region: 'Health badges', file: 'src/components/Home/HealthIndicator.tsx', cds: 'Chip, Tooltip' },
   { region: 'Market tables', file: 'src/components/AssetList/index.tsx', cds: 'Table, Banner, Pagination' },
 ];
 
@@ -322,8 +406,10 @@ export const STACK_ROWS: StackRow[] = [
   { layer: 'Wallet', choice: 'wagmi + viem', notes: 'Injected connector' },
   { layer: 'Market data', choice: 'DefiLlama APIs', notes: 'Pools + protocols, no key' },
   { layer: 'Portfolio', choice: 'Zerion API', notes: 'Proxied via vite.config.ts' },
+  { layer: 'AI health', choice: 'OpenRouter (one portfolio call)', notes: 'Score + narrative + chips + alert copy' },
+  { layer: 'Charts', choice: 'Zerion wallet + fungible charts', notes: 'BTC overlay via WBTC / env fungible id' },
   { layer: 'Motion', choice: 'lottie-react', notes: 'Sidebar + quick-action icons' },
-  { layer: 'Overlays', choice: 'PortalProvider', notes: 'Tooltips and future modals' },
+  { layer: 'Overlays', choice: 'PortalProvider', notes: 'Tooltips, Tray inbox, Toast alerts' },
 ];
 
 export const FLOW_PILLS = [
@@ -333,6 +419,8 @@ export const FLOW_PILLS = [
   'Wallet',
   'Screenshots',
   'Portfolio v1',
+  'Liquidity pools',
   'design.md',
+  'AI verdicts',
   'Polish',
 ];

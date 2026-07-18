@@ -12,6 +12,7 @@ import {
   STRIP_MAX_H,
   STRIP_MIN_H,
   STRIP_W,
+  TIMING,
   expandedWidthFor,
 } from './constants';
 import type { MezoColorScheme } from './mezoTheme';
@@ -184,9 +185,20 @@ export const StripCanvas = ({ actions, view, expandedId, anticipatingId, colorSc
               className="mezo-chart-wrap"
               style={{ height: chartH, zIndex: 0 }}
               initial={reduceMotion ? { opacity: 0 } : { y: chartH + 60, opacity: 0 }}
-              animate={{ y: 0, opacity: 1 }}
-              exit={reduceMotion ? { opacity: 0 } : { y: chartH + 60, opacity: 0 }}
-              transition={reduceMotion ? { duration: 0.2 } : CHART_SPRING}
+              animate={{
+                y: 0,
+                opacity: 1,
+                transition: reduceMotion ? { duration: 0.2 } : CHART_SPRING,
+              }}
+              exit={
+                reduceMotion
+                  ? { opacity: 0, transition: { duration: 0.15 } }
+                  : {
+                      y: chartH + 40,
+                      opacity: 0,
+                      transition: { duration: 0.2, ease: TIMING.easeOut },
+                    }
+              }
             >
               <TimelineChart width={contentW} height={chartH} xForDay={xCenterForDay} colorScheme={colorScheme} />
             </MotionDiv>
@@ -202,8 +214,18 @@ export const StripCanvas = ({ actions, view, expandedId, anticipatingId, colorSc
                 <MotionDiv
                   key={tick.label}
                   initial={{ opacity: 0 }}
-                  animate={{ opacity: 1, transition: { delay: 0.25 + i * 0.08 } }}
-                  exit={{ opacity: 0, transition: { duration: 0.15 } }}
+                  animate={{
+                    opacity: 1,
+                    transition: {
+                      delay: 0.04 + i * 0.04,
+                      duration: 0.2,
+                      ease: TIMING.easeOut,
+                    },
+                  }}
+                  exit={{
+                    opacity: 0,
+                    transition: { duration: 0.12, ease: TIMING.easeOut },
+                  }}
                 >
                   <div
                     className="mezo-connector"

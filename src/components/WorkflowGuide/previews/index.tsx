@@ -4,17 +4,21 @@ import { ExpandedNavPreview } from './ExpandedNavPreview';
 import { HoldingsPreview } from './HoldingsPreview';
 import { HomePreview } from './HomePreview';
 import { IconsPreview } from './IconsPreview';
+import { PoolsPreview } from './PoolsPreview';
 import { PricesTablePreview } from './PricesTablePreview';
 import { TradePreview } from './TradePreview';
 import { TransactionsPreview } from './TransactionsPreview';
+import { VerdictsPreview } from './VerdictsPreview';
 
 export type PreviewKey =
   | 'shell'
   | 'home'
   | 'holdings'
   | 'transactions'
+  | 'pools'
   | 'trade'
   | 'data'
+  | 'verdicts'
   | 'polish';
 
 const PREVIEWS: Record<PreviewKey, () => ReactNode> = {
@@ -22,8 +26,10 @@ const PREVIEWS: Record<PreviewKey, () => ReactNode> = {
   home: () => <HomePreview />,
   holdings: () => <HoldingsPreview />,
   transactions: () => <TransactionsPreview />,
+  pools: () => <PoolsPreview />,
   trade: () => <TradePreview />,
   data: () => <PricesTablePreview />,
+  verdicts: () => <VerdictsPreview />,
   polish: () => <IconsPreview />,
 };
 
