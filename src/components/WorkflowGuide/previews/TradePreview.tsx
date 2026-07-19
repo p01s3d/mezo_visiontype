@@ -3,7 +3,7 @@ import { TradePanel } from '../../Home/TradePanel';
 
 export function TradePreview() {
   return (
-    <Box width="100%">
+    <Box minWidth={0} width="100%">
       <TradePanel bleedX={0} />
     </Box>
   );

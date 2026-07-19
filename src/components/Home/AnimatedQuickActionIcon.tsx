@@ -1,9 +1,8 @@
 import { useEffect, useRef } from 'react';
 import Lottie, { type LottieRefCurrentProps } from 'lottie-react';
+import { useTheme } from '@coinbase/cds-web';
 import { Box } from '@coinbase/cds-web/layout';
 import type { QuickActionAnimation } from '../../data/quickActionIcons';
-
-const COINBASE_BLUE = '#0052FF';
 
 type AnimatedQuickActionIconProps = {
   animationData: QuickActionAnimation;
@@ -17,7 +16,9 @@ export const AnimatedQuickActionIcon = ({
   loop = false,
 }: AnimatedQuickActionIconProps) => {
   const lottieRef = useRef<LottieRefCurrentProps>(null);
+  const { activeColorScheme } = useTheme();
   const shouldPlay = loop || hovered;
+  const isDark = activeColorScheme === 'dark';
 
   useEffect(() => {
     if (shouldPlay) {
@@ -30,15 +31,19 @@ export const AnimatedQuickActionIcon = ({
   return (
     <Box
       alignItems="center"
+      background="bgAlternate"
       borderRadius={1000}
       display="flex"
       flexShrink={0}
       height={40}
       justifyContent="center"
-      style={{ background: COINBASE_BLUE }}
       width={40}
     >
-      <Box height={24} style={{ filter: 'brightness(0) invert(1)' }} width={24}>
+      <Box
+        height={24}
+        style={isDark ? { filter: 'brightness(0) invert(1)' } : undefined}
+        width={24}
+      >
         <Lottie
           animationData={animationData}
           autoplay={loop}

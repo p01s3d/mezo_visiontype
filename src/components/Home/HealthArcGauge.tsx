@@ -99,7 +99,7 @@ export function HealthArcGauge({
         'How evenly value is spread across stables, L1, DeFi, and LP. Fuller means less sleeve concentration.',
       progress: diversification,
       radius: rOuter,
-      stroke: 'var(--bento-orange, var(--color-fgWarning, #f5a524))',
+      stroke: 'var(--color-fg, #141413)',
     },
     {
       id: 'consistency',
@@ -108,7 +108,7 @@ export function HealthArcGauge({
         'How smooth day-to-day returns have been. Fuller means lower daily volatility over the chart window.',
       progress: consistency,
       radius: rMid,
-      stroke: 'var(--color-fgPrimary, #0052ff)',
+      stroke: 'var(--chart-portfolio, #5db8a6)',
     },
     {
       id: 'safety',
@@ -117,7 +117,7 @@ export function HealthArcGauge({
         'How cushioned the book looks. Fuller means lower drawdown, less concentration, and fewer high-stress signals.',
       progress: 1 - Math.max(0, Math.min(1, risk)),
       radius: rInner,
-      stroke: 'var(--color-fg, #0a0b0d)',
+      stroke: 'var(--chart-benchmark, #e8a55a)',
     },
   ];
 

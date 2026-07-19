@@ -2,7 +2,6 @@ import { Box, HStack, VStack } from '@coinbase/cds-web/layout';
 import { Text } from '@coinbase/cds-web/typography';
 import { Icon } from '@coinbase/cds-web/icons';
 import { DEMO_LP_TRANSACTIONS } from '../../../data/demoLpTransactions';
-import { FilterGroup } from '../../Home/FilterGroup';
 import { HomePressableRow } from '../../Home/HomePressableRow';
 import { LpTransactionsList } from '../../Home/LpTransactionsList';
 import { DashboardSectionDivider } from '../../Home/TradeRail';
@@ -58,9 +57,6 @@ export function TransactionsPreview() {
       <Text font="title3" paddingBottom={1} paddingTop={1.5}>
         Activity
       </Text>
-      <Box paddingBottom={1} width="100%">
-        <FilterGroup />
-      </Box>
       <LpTransactionsList transactions={DEMO_LP_TRANSACTIONS.slice(0, 2)} />
     </VStack>
   );

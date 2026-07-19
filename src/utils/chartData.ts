@@ -66,4 +66,8 @@ export function getPercentChangeFromSeries(values: number[]): number {
   return ((end - start) / start) * 100;
 }
 
-export const CHART_STROKE_COLOR = '#0052FF';
+/**
+ * Default series stroke = portfolio teal (identity, not PnL).
+ * Up/down use fgPositive / fgNegative. Coral is brand UI only.
+ */
+export const CHART_STROKE_COLOR = 'var(--chart-portfolio, #5db8a6)';

@@ -228,10 +228,10 @@ export function usePositionHealth({
 
   const runHealth = useCallback(
     async (forceAi = false) => {
-      // Sticky insights: serve cache even while wallet data is still loading.
+      // Sticky insights only when the book signature still matches (never stale demo/live mix).
       if (!forceAi && address) {
         const cached = resolveInsightsCache(address);
-        if (cached) {
+        if (cached && cached.inputKey === inputKey) {
           setCandidates(cached.candidates);
           setVerdicts(cached.verdicts);
           setVerdictsByPositionId(cached.verdictsByPositionId);
@@ -256,8 +256,6 @@ export function usePositionHealth({
         }
       }
 
-      if (dataLoading && address) return;
-
       const nextCandidates = computeHealthCandidates({
         walletTokens,
         poolPositions,
@@ -277,7 +275,15 @@ export function usePositionHealth({
         portfolioChangePct,
         rawPortfolioValues,
       });
+      // Always publish rule health immediately — waiting on charts left health=null
+      // (skeleton → blank). AI synthesis can still defer while dataLoading.
       setHealth(nextHealth);
+
+      if (dataLoading && address && !forceAi) {
+        setLoading(false);
+        setAiLoading(false);
+        return;
+      }
 
       const ruleVerdicts = nextCandidates.map(buildRuleOnlyVerdict);
       const allVerdictsMap = Object.fromEntries(ruleVerdicts.map((v) => [v.candidateId, v]));
@@ -463,6 +469,22 @@ export function usePositionHealth({
       setAlerts(readAlerts(address));
     }
   }, [address]);
+
+  // Drop sticky health/insights when leaving the live book (avoids demo↔live bleed).
+  useEffect(() => {
+    if (enabled) return;
+    setCandidates([]);
+    setVerdicts([]);
+    setVerdictsByPositionId({});
+    setHealth(null);
+    setCockpit(null);
+    setNarrative(null);
+    setBentoInsights(null);
+    setCoachAiCopy(null);
+    setLoading(false);
+    setAiLoading(false);
+    aiRunRef.current = null;
+  }, [enabled]);
 
   useEffect(() => {
     void runHealth();

@@ -3,12 +3,11 @@ import { Text } from '@coinbase/cds-web/typography';
 import { DEMO_POOL_POSITIONS, DEMO_POOLS_TOTAL_USD } from '../../../data/demoPools';
 import { PoolsList } from '../../Home/PoolsList';
 import { RollingUsdBalance } from '../../Home/RollingUsdBalance';
-import { GUIDE_PREVIEW_HEIGHT } from '../previewConstants';
 
 export function PoolsPreview() {
   return (
-    <Box height={GUIDE_PREVIEW_HEIGHT} minWidth={0} overflow="hidden" width="100%">
-      <VStack gap={0} height="100%" width="100%">
+    <Box minWidth={0} overflow="hidden" width="100%">
+      <VStack gap={0} width="100%">
         <VStack flexShrink={0} gap={0.5} paddingBottom={1.5} width="100%">
           <RollingUsdBalance font="display2" value={DEMO_POOLS_TOTAL_USD} />
           <Text color="fgMuted" font="label2">

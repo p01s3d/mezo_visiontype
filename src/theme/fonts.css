@@ -1,7 +1,14 @@
 @layer cds {
   :root {
-    --defaultFont-sans: 'Riforma', system-ui, 'Helvetica Neue', Helvetica, Arial, sans-serif;
-    --defaultFont-mono: 'Riforma Mono', ui-monospace, Menlo, Consolas, monospace;
+    --defaultFont-sans: 'Styrene B', Inter, system-ui, -apple-system, 'Segoe UI', sans-serif;
+    --defaultFont-display: 'Copernicus', 'Tiempos Headline', Garamond, 'Times New Roman', serif;
+    --defaultFont-mono: 'JetBrains Mono', ui-monospace, Menlo, Consolas, monospace;
+
+    /* design-mvp chart accents (App.tsx overrides per color scheme) */
+    --chart-portfolio: #5db8a6;
+    --chart-benchmark: #e8a55a;
+    --chart-accent: #cc785c;
+    --chart-secondary: #141413;
   }
 
   html,
@@ -16,5 +23,12 @@
   .cds-Banner-content,
   .cds-Banner-middle {
     font-family: var(--defaultFont-sans);
+  }
+
+  /* Display roles: slab + negative tracking (MVP) */
+  [class*='display1'],
+  [class*='display2'],
+  [class*='display3'] {
+    letter-spacing: -0.02em;
   }
 }

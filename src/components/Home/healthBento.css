@@ -1,13 +1,18 @@
 .healthBento {
-  --bento-bg: var(--color-bgAlternate, #f2f2f2);
-  --bento-bg-elevated: var(--color-bg, #fff);
-  --bento-line: var(--color-bgLine, #dee1e6);
-  --bento-muted: var(--color-fgMuted, #5b616e);
-  --bento-green: var(--color-fgPositive, #098551);
-  --bento-red: var(--color-fgNegative, #cf202f);
-  --bento-chart: var(--color-fgPrimary, #0052ff);
-  --bento-orange: var(--color-fgWarning, #f5a524);
-  --bento-chart-panel: var(--color-bgPrimaryWash, #eef2ff);
+  --bento-bg: var(--color-bgAlternate, #efe9de);
+  --bento-bg-elevated: var(--color-bg, #faf9f5);
+  --bento-line: var(--color-bgLine, rgba(20, 20, 19, 0.12));
+  --bento-muted: var(--color-fgMuted, #6c6a64);
+  --bento-green: var(--color-fgPositive, #2f7a4a);
+  --bento-red: var(--color-fgNegative, #c64545);
+  --bento-chart: var(--chart-portfolio, #5db8a6);
+  --bento-orange: var(--chart-benchmark, #e8a55a);
+  --bento-chart-panel: color-mix(in srgb, var(--color-bgLine, #dee1e6) 40%, transparent);
+  /* Soft PnL fills for heatmap (editorial mint / blush) */
+  --heat-mint: #d8ebe0;
+  --heat-mint-strong: #b5d9c4;
+  --heat-blush: #f0e0de;
+  --heat-blush-strong: #e4c4c0;
   --bento-radius: 24px;
   --bento-pad: 20px;
   width: 100%;
@@ -81,6 +86,19 @@
   overflow: visible;
 }
 
+/* Guide ch. 10 — arc preview sized to the gauge, not clipped */
+.healthBento--guideArc .healthBento__healthBody {
+  min-height: 240px;
+}
+
+.healthBento--guideArc .healthBento__healthGauge {
+  inset: -8px -8px -4px 0;
+}
+
+.healthBento--guideArc .healthBento__card--health {
+  overflow: visible;
+}
+
 .healthArcGauge__labelWrap {
   display: flex;
   align-items: center;
@@ -102,7 +120,7 @@
 }
 
 .healthArcGauge__label:focus-visible {
-  color: var(--color-fg, #0a0b0d);
+  color: var(--color-fg, #141413);
   border-bottom-style: solid;
 }
 
@@ -186,20 +204,34 @@
   max-width: 72px;
   height: 160px;
   border-radius: 14px;
-  background: repeating-linear-gradient(
-    -45deg,
-    var(--color-bgLine, #dee1e6),
-    var(--color-bgLine, #dee1e6) 3px,
-    var(--bento-bg-elevated, #fff) 3px,
-    var(--bento-bg-elevated, #fff) 6px
-  );
+  background: var(--bento-bg);
   display: flex;
   flex-direction: column;
   overflow: hidden;
   margin: 0 auto;
 }
 
+/* Same stripe + opacity as `.healthBento__heatCell--out` (0.55) — behind solid fills */
+.healthBento__allocTrack::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background: repeating-linear-gradient(
+    -45deg,
+    var(--color-bgLine, #dee1e6),
+    var(--color-bgLine, #dee1e6) 3px,
+    var(--bento-bg) 3px,
+    var(--bento-bg) 6px
+  );
+  opacity: 0.55;
+  pointer-events: none;
+  z-index: 0;
+}
+
 .healthBento__allocHalf {
+  position: relative;
+  z-index: 1;
   flex: 1 1 0;
   min-height: 0;
   width: 100%;
@@ -215,42 +247,51 @@
   align-items: flex-start;
 }
 
-.healthBento__allocMidline {
-  position: absolute;
-  left: 6px;
-  right: 6px;
-  top: 50%;
-  height: 1px;
-  background: var(--color-fgMuted, #5b616e);
-  opacity: 0.45;
-  transform: translateY(-50%);
-  z-index: 2;
-  pointer-events: none;
-}
-
 .healthBento__allocFill {
   width: 100%;
-  border-radius: 10px;
+  height: 100%;
   min-height: 0;
-  transform: scaleY(0);
-  transition:
-    transform 800ms cubic-bezier(0.23, 1, 0.32, 1),
-    height 800ms cubic-bezier(0.23, 1, 0.32, 1);
-  will-change: transform, height;
+  /* Solid fills — no stripe bleed from the track */
+  background-image: none;
+  transform: scaleY(var(--alloc-extent, 0));
+  transition-property: transform;
+  transition-duration: 280ms;
+  transition-timing-function: cubic-bezier(0.77, 0, 0.175, 1);
+  transition-delay: 0ms;
+  will-change: transform;
 }
 
 .healthBento__allocFill--pos {
   transform-origin: bottom center;
-  border-radius: 10px 10px 4px 4px;
+  border-radius: 10px 10px 0 0;
+  background: var(--heat-mint-strong, #b5d9c4);
 }
 
 .healthBento__allocFill--neg {
   transform-origin: top center;
-  border-radius: 4px 4px 10px 10px;
+  border-radius: 0 0 10px 10px;
+  background: var(--heat-blush-strong, #e4c4c0);
 }
 
-.healthBento__allocFill.is-revealed {
-  transform: scaleY(1);
+.healthBento__allocBars.is-entering .healthBento__allocFill {
+  transition-duration: 480ms;
+  transition-timing-function: cubic-bezier(0.23, 1, 0.32, 1);
+}
+
+.healthBento__allocBars.is-entering .healthBento__allocCol:nth-child(1) .healthBento__allocFill {
+  transition-delay: 0ms;
+}
+
+.healthBento__allocBars.is-entering .healthBento__allocCol:nth-child(2) .healthBento__allocFill {
+  transition-delay: 40ms;
+}
+
+.healthBento__allocBars.is-entering .healthBento__allocCol:nth-child(3) .healthBento__allocFill {
+  transition-delay: 80ms;
+}
+
+.healthBento__allocBars.is-entering .healthBento__allocCol:nth-child(4) .healthBento__allocFill {
+  transition-delay: 120ms;
 }
 
 .healthBento__allocFlat {
@@ -275,24 +316,10 @@
   transform: translateY(-50%) scaleX(1);
 }
 
-.healthBento__allocBars .healthBento__allocCol:nth-child(1) .healthBento__allocFill {
-  transition-delay: 80ms;
-}
-.healthBento__allocBars .healthBento__allocCol:nth-child(2) .healthBento__allocFill {
-  transition-delay: 140ms;
-}
-.healthBento__allocBars .healthBento__allocCol:nth-child(3) .healthBento__allocFill {
-  transition-delay: 200ms;
-}
-.healthBento__allocBars .healthBento__allocCol:nth-child(4) .healthBento__allocFill {
-  transition-delay: 260ms;
-}
-
 @media (prefers-reduced-motion: reduce) {
   .healthBento__allocFill {
     transition: none;
     transition-delay: 0ms;
-    transform: scaleY(1);
   }
   .healthBento__allocFlat {
     transition: none;
@@ -302,7 +329,7 @@
 }
 
 .healthBento__sparkle {
-  color: var(--color-fgPrimary, #0052ff);
+  color: var(--color-fgPrimary, #cc785c);
   display: inline-flex;
   align-items: center;
 }
@@ -388,7 +415,7 @@
   border-radius: 999px;
   background: var(--color-bg, #fff);
   border: 1px solid var(--color-bgLine, #dee1e6);
-  color: var(--color-fg, #0a0b0d);
+  color: var(--color-fg, #141413);
   pointer-events: none;
   white-space: nowrap;
   transition: opacity 400ms cubic-bezier(0.23, 1, 0.32, 1) 550ms;
@@ -500,19 +527,19 @@
 }
 
 .healthBento__heatCell--pos {
-  --heat-fill: var(--color-bgPrimaryWash, #c5d3ff);
+  --heat-fill: var(--heat-mint);
 }
 
 .healthBento__heatCell--posStrong {
-  --heat-fill: color-mix(in srgb, var(--color-fgPrimary, #0052ff) 55%, transparent);
+  --heat-fill: var(--heat-mint-strong);
 }
 
 .healthBento__heatCell--neg {
-  --heat-fill: var(--color-bgWarningWash, #fff1d6);
+  --heat-fill: var(--heat-blush);
 }
 
 .healthBento__heatCell--negStrong {
-  --heat-fill: color-mix(in srgb, var(--color-fgWarning, #f5a524) 75%, transparent);
+  --heat-fill: var(--heat-blush-strong);
 }
 
 .healthBento__heatCell--flat {

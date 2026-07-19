@@ -42,7 +42,7 @@ export const DefiNavItem = ({ entry, active, collapsed, onSelect }: DefiNavItemP
           hovered={hovered}
         />
         {!collapsed ? (
-          <Text color="fg" font="headline" style={{ fontWeight: active ? 600 : 400 }}>
+          <Text color="fg" font="headline" style={{ fontWeight: active ? 500 : 400 }}>
             {entry.title}
           </Text>
         ) : null}

@@ -37,7 +37,10 @@ export function tokenToPriceRow(
     priceUsd: token.price,
     changePct,
     iconUrl: token.logoUrl ?? getTokenIconUrl(token.symbol),
-    sparkColor: changePct < 0 ? '#CF202F' : '#0052FF',
+    sparkColor:
+      changePct < 0
+        ? 'var(--color-fgNegative, #c64545)'
+        : 'var(--color-fgPositive, #2f7a4a)',
     trend: changePct < 0 ? 'down' : changePct > 0 ? 'up' : 'flat',
     fungibleId: token.fungibleId,
     chartSeries: chart?.values ?? null,

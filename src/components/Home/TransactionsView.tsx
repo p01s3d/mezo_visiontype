@@ -3,7 +3,12 @@ import { Box, HStack, VStack } from '@coinbase/cds-web/layout';
 import { Text } from '@coinbase/cds-web/typography';
 import { Icon } from '@coinbase/cds-web/icons';
 import type { LpTransaction } from '../../api/walletTypes';
-import { DEMO_LP_TRANSACTIONS } from '../../data/demoLpTransactions';
+import {
+  emptyReasonMessage,
+  emptyReasonTitle,
+  type EmptyReason,
+  type WalletDataMode,
+} from '../../data/portfolioSnapshot';
 import { FilterGroup } from './FilterGroup';
 import { HomePressableRow } from './HomePressableRow';
 import { LpTransactionsList } from './LpTransactionsList';
@@ -14,7 +19,8 @@ const CONTENT_PADDING_X = 2;
 type TransactionsViewProps = {
   lpTransactions: LpTransaction[];
   loading?: boolean;
-  isConnected?: boolean;
+  dataMode: WalletDataMode;
+  emptyReason?: EmptyReason;
   flaggedTransactionIds?: Set<string>;
   riskyDepositCount?: number;
 };
@@ -60,15 +66,24 @@ function RecurringBuysRow() {
 export const TransactionsView = ({
   lpTransactions,
   loading = false,
-  isConnected = false,
+  dataMode,
+  emptyReason,
   flaggedTransactionIds = new Set(),
   riskyDepositCount = 0,
 }: TransactionsViewProps) => {
-  const transactions = isConnected ? lpTransactions : DEMO_LP_TRANSACTIONS;
+  const isDemo = dataMode === 'demo';
+  const isLive = dataMode === 'live';
 
   return (
     <DashboardWithTradeRail>
       <VStack gap={0} width="100%">
+        {dataMode === 'empty' && (!loading || emptyReason === 'refreshing') ? (
+          <Box paddingX={CONTENT_PADDING_X} paddingTop={2} width="100%">
+            <Banner startIcon="info" title={emptyReasonTitle(emptyReason)} variant="informational">
+              {emptyReasonMessage(emptyReason)}
+            </Banner>
+          </Box>
+        ) : null}
         <Box paddingTop={2} paddingX={CONTENT_PADDING_X} width="100%">
           <Text font="title3">Manage</Text>
         </Box>
@@ -95,13 +110,15 @@ export const TransactionsView = ({
         <VStack gap={0} paddingX={CONTENT_PADDING_X} width="100%">
           <LpTransactionsList
             emptyMessage={
-              isConnected ? 'No liquidity activity found for this wallet.' : 'No liquidity activity yet.'
+              isLive
+                ? 'No liquidity activity found for this wallet.'
+                : 'No liquidity activity yet.'
             }
             flaggedTransactionIds={flaggedTransactionIds}
-            loading={loading && isConnected}
-            transactions={transactions}
+            loading={loading && !isDemo}
+            transactions={lpTransactions}
           />
-          {!isConnected ? (
+          {isDemo ? (
             <Text color="fgMuted" font="label2" paddingBottom={3}>
               Showing sample LP activity — connect wallet to see yours
             </Text>

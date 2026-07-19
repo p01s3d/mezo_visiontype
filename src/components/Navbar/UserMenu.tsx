@@ -40,7 +40,7 @@ export const UserMenu = () => {
       value=""
       width={300}
     >
-      <Button compact loading={isPending} variant="secondary">
+      <Button borderRadius={200} compact loading={isPending} variant="primary">
         Connect wallet
       </Button>
     </Dropdown>

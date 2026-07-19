@@ -1,10 +1,15 @@
 import { useState } from 'react';
 import { Banner } from '@coinbase/cds-web/banner';
 import { Box, VStack } from '@coinbase/cds-web/layout';
-import { Text } from '@coinbase/cds-web/typography';
 import type { ChartPeriod } from '../../api/zerion';
 import type { Protocol } from '../../api/defillama';
 import type { GroupedPoolPosition, WalletToken } from '../../api/walletTypes';
+import {
+  emptyReasonMessage,
+  emptyReasonTitle,
+  type EmptyReason,
+  type WalletDataMode,
+} from '../../data/portfolioSnapshot';
 import type { PortfolioHealthScore } from '../../utils/portfolioHealthScore';
 import type { BentoInsights } from '../../prompts/portfolioHealthPrompt';
 import type { CoachInsight } from '../../utils/coachInsight';
@@ -21,7 +26,8 @@ type HomeDashboardProps = {
   personalLoading: boolean;
   missingApiKey: boolean;
   apiKeyIssue: 'missing' | 'empty' | null;
-  isConnected: boolean;
+  dataMode: WalletDataMode;
+  emptyReason?: EmptyReason;
   health: PortfolioHealthScore | null;
   bentoInsights?: BentoInsights | null;
   coachInsight?: CoachInsight | null;
@@ -38,9 +44,11 @@ type HomeDashboardProps = {
   bentoPortfolioSeries?: number[];
   bentoBtcSeries?: number[] | null;
   bentoRawValues?: number[];
+  bentoRawTimestamps?: number[];
   bentoTimestamps?: number[];
-  bentoVsBtcPct?: number | null;
   bentoLoading?: boolean;
+  dayRawValues?: number[];
+  dayRawTimestamps?: number[];
   protocols?: Protocol[];
   refreshEpoch?: number;
 };
@@ -52,7 +60,8 @@ export const HomeDashboard = ({
   personalLoading,
   missingApiKey,
   apiKeyIssue,
-  isConnected,
+  dataMode,
+  emptyReason,
   health,
   bentoInsights = null,
   coachInsight = null,
@@ -69,22 +78,32 @@ export const HomeDashboard = ({
   bentoPortfolioSeries = [],
   bentoBtcSeries = null,
   bentoRawValues = [],
+  bentoRawTimestamps = [],
   bentoTimestamps = [],
-  bentoVsBtcPct = null,
   bentoLoading = false,
+  dayRawValues = [],
+  dayRawTimestamps = [],
   protocols = [],
   refreshEpoch = 0,
 }: HomeDashboardProps) => {
   const [chartExpanded, setChartExpanded] = useState(false);
+  const isLive = dataMode !== 'demo';
 
   return (
     <DashboardWithTradeRail>
-      {isConnected && missingApiKey ? (
+      {isLive && missingApiKey ? (
         <Banner startIcon="info" title="Zerion API key required" variant="warning">
           {apiKeyIssue === 'empty'
             ? 'Your .env has VITE_ZERION_API_KEY but the value is empty. Paste your key from dashboard.zerion.io, save, then restart the dev server.'
             : 'Add your API key to .env as VITE_ZERION_API_KEY. Get a free key at dashboard.zerion.io, then restart the dev server.'}
         </Banner>
+      ) : null}
+      {dataMode === 'empty' && (!personalLoading || emptyReason === 'refreshing') ? (
+        <Box paddingX={2} paddingTop={2} width="100%">
+          <Banner startIcon="info" title={emptyReasonTitle(emptyReason)} variant="informational">
+            {emptyReasonMessage(emptyReason)}
+          </Banner>
+        </Box>
       ) : null}
       <Box paddingX={2} paddingY={2} width="100%">
         <VStack gap={2} width="100%">
@@ -93,8 +112,8 @@ export const HomeDashboard = ({
             chartPeriod={chartPeriod}
             chartTimestamps={chartTimestamps}
             chartValues={chartValues}
+            dataMode={dataMode}
             expanded={chartExpanded}
-            isConnected={isConnected}
             loading={personalLoading}
             onChartPeriodChange={onChartPeriodChange}
             onToggleExpanded={() => setChartExpanded((open) => !open)}
@@ -102,39 +121,43 @@ export const HomeDashboard = ({
             rawChartValues={rawChartValues}
             totalBalanceUsd={totalBalanceUsd}
           />
-          <VStack gap={1} width="100%">
-            <Text font="label2">Allocation</Text>
-            <BalanceBreakdown
-              isConnected={isConnected}
-              loading={personalLoading}
-              onNavigate={onAllocationNavigate}
-              poolPositions={poolPositions}
-              walletTokens={walletTokens}
-            />
-          </VStack>
+          <BalanceBreakdown
+            dataMode={dataMode}
+            loading={personalLoading}
+            onNavigate={onAllocationNavigate}
+            poolPositions={poolPositions}
+            walletTokens={walletTokens}
+          />
         </VStack>
       </Box>
       <DashboardSectionDivider />
       <HealthScorePanel
         bentoInsights={bentoInsights}
         btcSeries={bentoBtcSeries}
+        chartsLoading={bentoLoading || chartLoading}
         coachInsight={coachInsight}
+        dataMode={dataMode}
+        dayRawTimestamps={dayRawTimestamps}
+        dayRawValues={dayRawValues}
         health={health}
-        isConnected={isConnected}
-        loading={(personalLoading || aiLoading || bentoLoading) && !health}
+        loading={
+          dataMode !== 'demo' &&
+          !health &&
+          (personalLoading || aiLoading || (dataMode === 'live' && bentoLoading))
+        }
         missingOpenRouterKey={missingOpenRouterKey}
         poolPositions={poolPositions}
         portfolioSeries={bentoPortfolioSeries}
         protocols={protocols}
         rawPortfolioValues={bentoRawValues}
+        rawTimestamps={bentoRawTimestamps}
         refreshEpoch={refreshEpoch}
         timestamps={bentoTimestamps}
-        vsBtcPct={bentoVsBtcPct}
         walletTokens={walletTokens}
       />
       <DashboardSectionDivider />
       <PricesSection
-        isConnected={isConnected}
+        isConnected={isLive}
         loading={personalLoading}
         refreshEpoch={refreshEpoch}
         walletTokens={walletTokens}

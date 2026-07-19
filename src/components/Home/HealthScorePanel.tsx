@@ -18,6 +18,7 @@ import { formatUsd } from '../../utils/format';
 import { DEMO_BENTO_CHART, DEMO_HEALTH_SCORE } from '../../data/demoHealthScore';
 import { DEMO_POOL_POSITIONS } from '../../data/demoPools';
 import { DEMO_WALLET_TOKENS } from '../../data/demoPortfolio';
+import type { WalletDataMode } from '../../data/portfolioSnapshot';
 import {
   buildRuleCryptoInsight,
   getTrendingProtocols,
@@ -31,10 +32,20 @@ import { YieldIdleCard } from './YieldIdleCard';
 import { InsightsRollingNumber } from './InsightsRollingNumber';
 import './healthBento.css';
 
+const EMPTY_HEALTH_SCORE: PortfolioHealthScore = {
+  score: 0,
+  grade: 'watch',
+  factors: [],
+  ruleNarrative: 'No portfolio data yet.',
+  vsBtcPct: 0,
+  portfolioChangePct: 0,
+  drawdownPct: 0,
+};
+
 type HealthScorePanelProps = {
   health: PortfolioHealthScore | null;
   loading: boolean;
-  isConnected: boolean;
+  dataMode: WalletDataMode;
   missingOpenRouterKey: boolean;
   bentoInsights?: BentoInsights | null;
   coachInsight?: CoachInsight | null;
@@ -42,9 +53,16 @@ type HealthScorePanelProps = {
   poolPositions?: GroupedPoolPosition[];
   portfolioSeries?: number[];
   btcSeries?: number[] | null;
-  vsBtcPct?: number | null;
   rawPortfolioValues?: number[];
+  /** Aligned with rawPortfolioValues — daily heatmap. */
+  rawTimestamps?: number[];
+  /** Aligned with portfolioSeries / btcSeries — deviation axis. */
   timestamps?: number[];
+  /** Day-period raw series — hero % for Daily Performance (matches 1D net worth). */
+  dayRawValues?: number[];
+  dayRawTimestamps?: number[];
+  /** True while month/day chart hooks are still fetching. */
+  chartsLoading?: boolean;
   protocols?: Protocol[];
   refreshEpoch?: number;
 };
@@ -71,7 +89,7 @@ function renderInsight(text: string, highlight?: string) {
 export const HealthScorePanel = ({
   health,
   loading,
-  isConnected,
+  dataMode,
   missingOpenRouterKey,
   bentoInsights = null,
   coachInsight = null,
@@ -79,41 +97,61 @@ export const HealthScorePanel = ({
   poolPositions = [],
   portfolioSeries = [],
   btcSeries = null,
-  vsBtcPct = null,
   rawPortfolioValues = [],
+  rawTimestamps = [],
   timestamps = [],
+  dayRawValues = [],
+  dayRawTimestamps = [],
+  chartsLoading = false,
   protocols = [],
   refreshEpoch = 0,
 }: HealthScorePanelProps) => {
-  const displayHealth = !isConnected ? DEMO_HEALTH_SCORE : health;
-  const tokens = !isConnected || walletTokens.length === 0 ? DEMO_WALLET_TOKENS : walletTokens;
-  const pools = !isConnected || poolPositions.length === 0 ? DEMO_POOL_POSITIONS : poolPositions;
-  const yieldInsight = coachInsight ?? (!isConnected ? demoCoachInsight() : null);
+  const isDemo = dataMode === 'demo';
+  const isEmpty = dataMode === 'empty';
+  const isLive = dataMode === 'live';
 
-  // Never mix live portfolio with demo BTC — that made the deviation chart lie.
-  const seriesPortfolio = !isConnected
+  // Demo only in demo mode — live/empty never inject DEMO_* into charts or book.
+  // Live-without-health must not become null (that returned blank after the skeleton).
+  const displayHealth = isDemo
+    ? DEMO_HEALTH_SCORE
+    : isEmpty || !health
+      ? EMPTY_HEALTH_SCORE
+      : health;
+  const tokens = isDemo ? DEMO_WALLET_TOKENS : walletTokens;
+  const pools = isDemo ? DEMO_POOL_POSITIONS : poolPositions;
+  const yieldInsight = coachInsight ?? (isDemo ? demoCoachInsight() : null);
+
+  const seriesPortfolio = isDemo
     ? DEMO_BENTO_CHART.portfolio
     : portfolioSeries.length >= 2
       ? portfolioSeries
       : [];
-  const seriesBtc = !isConnected
+  const seriesBtc = isDemo
     ? DEMO_BENTO_CHART.btc
     : btcSeries && btcSeries.length >= 2
       ? btcSeries
       : null;
-  const seriesRaw = !isConnected
+  const seriesRaw = isDemo
     ? DEMO_BENTO_CHART.raw
     : rawPortfolioValues.length >= 2
       ? rawPortfolioValues
       : [];
-  const seriesTs = !isConnected
+  // Prefer dedicated raw timestamps; fall back to overlay axis when lengths match.
+  // Only raw timestamps — overlay axis is resampled and must not bucket daily closes.
+  const seriesRawTs = isDemo
+    ? DEMO_BENTO_CHART.timestamps
+    : rawTimestamps.length === seriesRaw.length && rawTimestamps.length >= 2
+      ? rawTimestamps
+      : [];
+  const seriesOverlayTs = isDemo
     ? DEMO_BENTO_CHART.timestamps
     : timestamps.length >= 2
       ? timestamps
-      : [];
-  const vs = !isConnected
-    ? DEMO_BENTO_CHART.vsBtcPct
-    : vsBtcPct;
+      : seriesRawTs;
+  // Daily can render from raw USD alone (metrics synth heatmap if timestamps sparse).
+  const dailyReady = !isEmpty && seriesRaw.length >= 2;
+  const deviationReady =
+    !isEmpty && seriesPortfolio.length >= 2 && seriesBtc != null && seriesBtc.length >= 2;
 
   const ruleArcs = useMemo(
     () =>
@@ -133,25 +171,35 @@ export const HealthScorePanel = ({
   };
 
   const deviation = useMemo(
-    () => computeDeviationMetrics(vs, seriesPortfolio, seriesBtc),
-    [vs, seriesPortfolio, seriesBtc],
+    () => computeDeviationMetrics(seriesPortfolio, seriesBtc),
+    [seriesPortfolio, seriesBtc],
   );
 
-  const daily = useMemo(
-    () => computeDailyPerformance(seriesRaw, seriesTs),
-    [seriesRaw, seriesTs],
-  );
+  const daily = useMemo(() => {
+    // Day-chart USD series only — same first→last window as Net worth 1D.
+    const heroSource =
+      !isDemo && dayRawValues.length >= 2
+        ? { values: dayRawValues, timestamps: dayRawTimestamps }
+        : undefined;
+    return computeDailyPerformance(
+      seriesRaw,
+      seriesRawTs.length === seriesRaw.length ? seriesRawTs : [],
+      heroSource,
+    );
+  }, [isDemo, seriesRaw, seriesRawTs, dayRawValues, dayRawTimestamps]);
 
   const trending = useMemo(() => getTrendingProtocols(protocols, 5), [protocols]);
   const ruleCrypto = useMemo(() => buildRuleCryptoInsight(trending), [trending]);
 
-  const deviationCopy = bentoInsights?.deviationNarrative ?? deviation.narrative;
+  // Always series-derived copy so the % matches the headline (AI must not invent another figure).
+  const deviationCopy = deviation.narrative;
   const dailyCopy = bentoInsights?.dailyInsight ?? daily.insight;
   const dailyHighlight = bentoInsights?.dailyHighlight;
   const cryptoInsight = bentoInsights?.cryptoInsight ?? ruleCrypto.cryptoInsight;
   const cryptoHighlight = bentoInsights?.cryptoHighlight ?? ruleCrypto.cryptoHighlight;
 
-  if (loading && isConnected && !displayHealth) {
+  // Skeleton only while we truly have no score yet — never blank a live dashboard on Refresh.
+  if (!isDemo && !health && loading) {
     return (
       <div className="healthBento">
         <div className="healthBento__grid">
@@ -179,14 +227,28 @@ export const HealthScorePanel = ({
     );
   }
 
-  if (!displayHealth) return null;
-
   const changeUp = daily.periodChangePct >= 0;
   const absChangeUsd = Math.abs(daily.periodChangeUsd);
+  const noChartCopy = isEmpty
+    ? 'No chart data'
+    : chartsLoading
+      ? 'Waiting on portfolio history…'
+      : seriesRaw.length < 2
+        ? 'No chart data for this wallet yet — try Refresh.'
+        : 'No chart data';
+  const noDeviationCopy = isEmpty
+    ? 'No chart data'
+    : !isLive
+      ? 'Connect to compare against BTC.'
+      : chartsLoading
+        ? 'Waiting on portfolio and BTC series for this window…'
+        : seriesPortfolio.length >= 2 && !seriesBtc
+          ? 'Portfolio history loaded — BTC benchmark unavailable. Try Refresh.'
+          : 'No chart data for this wallet yet — try Refresh.';
 
   return (
     <div className="healthBento">
-      {isConnected && missingOpenRouterKey ? (
+      {isLive && missingOpenRouterKey ? (
         <Box marginBottom={2}>
           <Banner startIcon="info" title="AI insights" variant="informational">
             Add VITE_OPENROUTER_API_KEY so AI can score arcs and write performance copy. Charts still
@@ -196,7 +258,7 @@ export const HealthScorePanel = ({
       ) : null}
 
       <VStack gap={3} width="100%">
-        {!missingOpenRouterKey && isConnected ? (
+        {!missingOpenRouterKey && isLive ? (
           <Text font="title3">Insights powered by AI</Text>
         ) : null}
 
@@ -224,7 +286,7 @@ export const HealthScorePanel = ({
 
             <section className="healthBento__card healthBento__card--deviation">
               <Text font="label1">Performance Deviation</Text>
-              {seriesPortfolio.length >= 2 && seriesBtc && seriesBtc.length >= 2 ? (
+              {deviationReady ? (
                 <>
                   <InsightsRollingNumber
                     formattedValue={formatSignedPct(deviation.vsBtcPct)}
@@ -250,19 +312,17 @@ export const HealthScorePanel = ({
                       </HStack>
                     </HStack>
                     <DeviationChart
-                      benchmark={seriesBtc}
+                      benchmark={seriesBtc!}
                       maxGapIndex={deviation.maxGapIndex}
                       maxGapPct={deviation.maxGapPct}
                       portfolio={seriesPortfolio}
-                      timestamps={seriesTs}
+                      timestamps={seriesOverlayTs}
                     />
                   </div>
                 </>
               ) : (
                 <Text color="fgMuted" font="label2" paddingTop={1}>
-                  {isConnected
-                    ? 'Waiting on portfolio and BTC series for this window…'
-                    : 'Connect to compare against BTC.'}
+                  {noDeviationCopy}
                 </Text>
               )}
             </section>
@@ -277,41 +337,40 @@ export const HealthScorePanel = ({
           <div className="healthBento__col healthBento__col--right">
             <section className="healthBento__card healthBento__card--daily">
               <Text font="label1">Daily Performance</Text>
-              <HStack alignItems="center" flexWrap="wrap" gap={1.5} paddingTop={1}>
-                <HStack alignItems="baseline" gap={0}>
-                  {changeUp ? null : (
-                    <Text font="display2">−</Text>
-                  )}
-                  <InsightsRollingNumber
-                    formattedValue={formatUsd(absChangeUsd).replace(/^-/, '')}
-                    value={absChangeUsd}
-                    zeroFormattedValue={formatUsd(0)}
-                  />
-                </HStack>
-                <span
-                  className={`healthBento__changePill ${changeUp ? 'healthBento__changePill--up' : 'healthBento__changePill--down'}`}
-                >
-                  <HStack alignItems="center" gap={0.5}>
-                    <Text font="label2">{changeUp ? '↑' : '↓'}</Text>
+              {dailyReady ? (
+                <>
+                  <VStack gap={0} paddingTop={1}>
                     <InsightsRollingNumber
-                      formattedValue={`${Math.abs(daily.periodChangePct).toFixed(2)}%`}
-                      font="label2"
-                      value={Math.abs(daily.periodChangePct)}
-                      zeroFormattedValue="0.00%"
+                      color={changeUp ? 'fgPositive' : 'fgNegative'}
+                      formattedValue={`${changeUp ? '+' : '−'}${formatUsd(absChangeUsd).replace(/^-/, '')}`}
+                      value={absChangeUsd}
+                      zeroFormattedValue={`+${formatUsd(0)}`}
                     />
-                  </HStack>
-                </span>
-              </HStack>
-              <Box paddingTop={1}>
-                <Text color="fgMuted" font="label2">
-                  {renderInsight(dailyCopy, dailyHighlight)}
+                    <Text
+                      className="healthBento__yieldCaption"
+                      color={changeUp ? 'fgPositive' : 'fgNegative'}
+                      font="label2"
+                    >
+                      {changeUp ? '+' : '−'}
+                      {Math.abs(daily.periodChangePct).toFixed(2)}%
+                    </Text>
+                  </VStack>
+                  <Box paddingTop={1}>
+                    <Text color="fgMuted" font="label2">
+                      {renderInsight(dailyCopy, dailyHighlight)}
+                    </Text>
+                  </Box>
+                  <DailyHeatmap cells={daily.cells} />
+                </>
+              ) : (
+                <Text color="fgMuted" font="label2" paddingTop={1}>
+                  {isDemo ? 'Connect to see daily performance.' : noChartCopy}
                 </Text>
-              </Box>
-              <DailyHeatmap cells={daily.cells} />
+              )}
             </section>
 
             <AllocationPerformanceCard
-              isConnected={isConnected}
+              dataMode={dataMode}
               poolPositions={poolPositions}
               refreshEpoch={refreshEpoch}
               walletTokens={walletTokens}
@@ -329,7 +388,7 @@ export const HealthScorePanel = ({
         </div>
       </VStack>
 
-      {!isConnected ? (
+      {isDemo ? (
         <Box paddingTop={1.5}>
           <Text color="fgMuted" font="label2">
             Sample — connect wallet for AI-calibrated insights

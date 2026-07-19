@@ -25,7 +25,7 @@ const ORDER_TYPES: { value: OrderType; label: string }[] = [
   { value: 'recurring', label: 'Recurring buy' },
 ];
 
-const COINBASE_BLUE = '#0052FF';
+const BRAND_CORAL = 'var(--color-fgPrimary, #cc785c)';
 
 export const TradePanel = ({ bleedX = 3 }: { bleedX?: 0 | 3 }) => {
   const { intent } = useTradeIntent();
@@ -139,8 +139,8 @@ export const TradePanel = ({ bleedX = 3 }: { bleedX?: 0 | 3 }) => {
         </HStack>
 
         <HStack alignItems="center" gap={1}>
-          <Icon active name="sortDoubleArrow" size="s" style={{ color: COINBASE_BLUE }} />
-          <Text font="label2" style={{ color: COINBASE_BLUE }}>
+          <Icon active name="sortDoubleArrow" size="s" style={{ color: BRAND_CORAL }} />
+          <Text font="label2" style={{ color: BRAND_CORAL }}>
             {convertedAmount} {assetSymbol}
           </Text>
         </HStack>
@@ -155,7 +155,7 @@ export const TradePanel = ({ bleedX = 3 }: { bleedX?: 0 | 3 }) => {
         payWithSubtitle="USD Wallet"
       />
 
-      <Button alignSelf="stretch" borderRadius={1000} variant="primary">
+      <Button alignSelf="stretch" borderRadius={200} variant="primary">
         {primaryLabel}
       </Button>
     </VStack>

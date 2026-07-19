@@ -110,10 +110,10 @@ export function buildRuleOnlySynthesis(
   const abs = Math.abs(vs);
   const deviationNarrative =
     vs < 0
-      ? `Portfolio underperformed its benchmark by ${abs.toFixed(2)}% during this window.`
+      ? `Portfolio underperformed BTC by ${abs.toFixed(2)}% over this window.`
       : vs > 0
-        ? `Portfolio outperformed its benchmark by ${abs.toFixed(2)}% over this window.`
-        : 'Portfolio tracked its benchmark closely over this window.';
+        ? `Portfolio outperformed BTC by ${abs.toFixed(2)}% over this window.`
+        : 'Portfolio tracked BTC closely over this window.';
   const change = health.portfolioChangePct ?? 0;
   const dailyInsight =
     change > 0

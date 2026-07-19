@@ -25,11 +25,11 @@ function IconCell({ label, children }: { label: string; children: ReactNode }) {
 
 export function IconsPreview() {
   return (
-    <VStack gap={3} width="100%">
+    <VStack gap={3} minWidth={0} width="100%">
       <Box
         display="grid"
         gap={2}
-        style={{ gridTemplateColumns: 'repeat(5, 1fr)' }}
+        style={{ gridTemplateColumns: 'repeat(3, 1fr)' }}
         width="100%"
       >
         {NAV_ICONS.map((icon) => (

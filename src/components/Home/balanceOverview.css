@@ -1,3 +1,19 @@
+.balanceOverview__changeRow {
+  align-items: center;
+}
+
+.balanceOverview__changeValue {
+  display: inline-flex;
+  align-items: center;
+  line-height: 1;
+}
+
+.balanceOverview__changePeriod {
+  display: inline-flex;
+  align-items: center;
+  line-height: 1;
+}
+
 .balanceOverview__chartSlot {
   display: grid;
   grid-template-rows: 0fr;

@@ -5,7 +5,9 @@ import { useInViewOnce } from '../../hooks/useInViewOnce';
 type DeviationChartProps = {
   portfolio: number[];
   benchmark: number[];
+  /** End-of-window index (callout matches headline vs BTC). */
   maxGapIndex: number;
+  /** End-of-window gap in pp — same value as the Performance Deviation headline. */
   maxGapPct: number;
   /** Unix seconds aligned with series — drives x-axis labels (historical, not forecast). */
   timestamps?: number[];
@@ -24,8 +26,8 @@ function downsample(data: number[], maxPoints: number): number[] {
   return out;
 }
 
-/** Evenly spaced axis ticks from historical timestamps (no future dates). */
-function axisLabelsFromTimestamps(timestamps: number[], tickCount = 5): string[] {
+/** Start / middle / end axis ticks from historical timestamps (no future dates). */
+function axisLabelsFromTimestamps(timestamps: number[], tickCount = 3): string[] {
   if (timestamps.length < 2) return [];
   // Use first/last of the full series so dense Zerion month charts don't
   // collapse the axis to the first few days when values were downsampled.
@@ -122,7 +124,7 @@ export function DeviationChart({
   const gapLabelLeftPct = (gx / width) * 100;
   const gapLabelTopPct = (Math.max(gapLabelTop, 14) / height) * 100;
 
-  const months = labels.length > 0 ? labels : ['', '', '', '', ''];
+  const months = labels.length > 0 ? labels : ['', '', ''];
   const gapLabel = `${maxGapPct > 0 ? '+' : ''}${maxGapPct.toFixed(2)}%`;
   const dashOffset = revealed ? 0 : 1;
 
@@ -145,7 +147,7 @@ export function DeviationChart({
               width="6"
             >
               <line
-                stroke="var(--color-fgPrimary, #0052ff)"
+                stroke="var(--chart-portfolio, #5db8a6)"
                 strokeOpacity="0.35"
                 strokeWidth="1.5"
                 x1="0"
@@ -167,7 +169,7 @@ export function DeviationChart({
             d={linePath(b)}
             fill="none"
             pathLength={1}
-            stroke="var(--color-fgWarning, #f5a524)"
+            stroke="var(--chart-benchmark, #e8a55a)"
             strokeDasharray={1}
             strokeDashoffset={dashOffset}
             strokeLinecap="round"
@@ -178,7 +180,7 @@ export function DeviationChart({
             d={linePath(p)}
             fill="none"
             pathLength={1}
-            stroke="var(--color-fgPrimary, #0052ff)"
+            stroke="var(--chart-portfolio, #5db8a6)"
             strokeDasharray={1}
             strokeDashoffset={dashOffset}
             strokeLinecap="round"
@@ -195,8 +197,8 @@ export function DeviationChart({
               y1={Math.min(gyP, gyB)}
               y2={Math.max(gyP, gyB) + 8}
             />
-            <circle cx={gx} cy={gyP} fill="var(--color-fgPrimary, #0052ff)" r={3.5} />
-            <circle cx={gx} cy={gyB} fill="var(--color-fgWarning, #f5a524)" r={3.5} />
+            <circle cx={gx} cy={gyP} fill="var(--chart-portfolio, #5db8a6)" r={3.5} />
+            <circle cx={gx} cy={gyB} fill="var(--chart-benchmark, #e8a55a)" r={3.5} />
           </g>
         </svg>
 

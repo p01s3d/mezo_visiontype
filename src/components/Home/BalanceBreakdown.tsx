@@ -4,8 +4,7 @@ import { Text } from '@coinbase/cds-web/typography';
 import { Icon } from '@coinbase/cds-web/icons';
 import type { IconName } from '@coinbase/cds-common/types/IconName';
 import type { GroupedPoolPosition, WalletToken } from '../../api/walletTypes';
-import { DEMO_POOL_POSITIONS } from '../../data/demoPools';
-import { DEMO_WALLET_TOKENS } from '../../data/demoPortfolio';
+import type { WalletDataMode } from '../../data/portfolioSnapshot';
 import {
   categoryTotals,
   TOKEN_CATEGORY_LABELS,
@@ -47,7 +46,7 @@ type BalanceBreakdownProps = {
   walletTokens: WalletToken[];
   poolPositions: GroupedPoolPosition[];
   loading: boolean;
-  isConnected: boolean;
+  dataMode: WalletDataMode;
   bleedX?: 0 | 2;
   onNavigate?: (destination: AllocationDestination) => void;
 };
@@ -93,16 +92,15 @@ export const BalanceBreakdown = ({
   walletTokens,
   poolPositions,
   loading,
-  isConnected,
+  dataMode,
   bleedX = 2,
   onNavigate,
 }: BalanceBreakdownProps) => {
-  const tokens = isConnected ? walletTokens : DEMO_WALLET_TOKENS;
-  const pools = isConnected ? poolPositions : DEMO_POOL_POSITIONS;
+  const showZeros = dataMode === 'demo' || dataMode === 'empty';
 
   const rows = useMemo(() => {
-    const totals = categoryTotals(tokens);
-    const poolsTotal = poolsTotalUsd(pools);
+    const totals = categoryTotals(walletTokens);
+    const poolsTotal = poolsTotalUsd(poolPositions);
 
     const tokenRows = TOKEN_CATEGORY_ORDER.map((category) => {
       const balance = totals[category];
@@ -112,7 +110,7 @@ export const BalanceBreakdown = ({
         label: TOKEN_CATEGORY_LABELS[category],
         balance,
       };
-    }).filter((row) => row.balance > 0 || !isConnected);
+    }).filter((row) => row.balance > 0 || showZeros);
 
     const poolRow = {
       key: 'liquidity-pools' as const,
@@ -121,10 +119,10 @@ export const BalanceBreakdown = ({
       balance: poolsTotal,
     };
 
-    return poolsTotal > 0 || !isConnected ? [...tokenRows, poolRow] : tokenRows;
-  }, [tokens, pools, isConnected]);
+    return poolsTotal > 0 || showZeros ? [...tokenRows, poolRow] : tokenRows;
+  }, [walletTokens, poolPositions, showZeros]);
 
-  if (loading && isConnected) {
+  if (loading && dataMode !== 'demo') {
     return (
       <VStack aria-busy aria-label="Loading allocations" gap={0} role="status" width="100%">
         {Array.from({ length: ALLOCATION_SKELETON_ROWS }, (_, index) => (

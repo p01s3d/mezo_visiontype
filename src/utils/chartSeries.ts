@@ -4,7 +4,9 @@ import { getPercentChangeFromSeries } from './chartData';
 export function rebaseTo100(values: number[]): number[] {
   if (values.length === 0) return [];
   const start = values[0];
-  if (start === 0) return values.map(() => 100);
+  // Non-positive start used to map the whole series to 100 (flat line) — that made
+  // "vs BTC" equal the portfolio return alone (e.g. +98% with a fake flat BTC).
+  if (!(start > 0) || !Number.isFinite(start)) return [];
   return values.map((value) => (value / start) * 100);
 }
 
@@ -17,7 +19,7 @@ export function normalizeUnixSeconds(timestamps: number[]): number[] {
   return timestamps;
 }
 
-/** Drop invalid points and sort ascending by time. */
+/** Drop invalid / non-positive points and sort ascending by time. */
 function prepareSeries(
   values: number[],
   timestamps: number[],
@@ -26,7 +28,9 @@ function prepareSeries(
   const n = Math.min(values.length, ts.length);
   const pairs: Array<{ v: number; t: number }> = [];
   for (let i = 0; i < n; i++) {
-    if (Number.isFinite(values[i]) && Number.isFinite(ts[i])) {
+    // Zerion wallet charts often lead with 0 before the first funded balance.
+    // Keeping those zeros collapses rebase-to-100 into a flat fake benchmark.
+    if (Number.isFinite(values[i]) && Number.isFinite(ts[i]) && values[i] > 0) {
       pairs.push({ v: values[i], t: ts[i] });
     }
   }
@@ -36,6 +40,18 @@ function prepareSeries(
     values: pairs.map((p) => p.v),
     timestamps: pairs.map((p) => p.t),
   };
+}
+
+/** Index-point range after rebase-to-100 (0 ⇒ flat / unusable benchmark). */
+export function rebasedRange(values: number[]): number {
+  if (values.length < 2) return 0;
+  let min = values[0];
+  let max = values[0];
+  for (const v of values) {
+    if (v < min) min = v;
+    if (v > max) max = v;
+  }
+  return max - min;
 }
 
 function sampleEvenly<T>(items: T[], count: number): T[] {
@@ -123,7 +139,7 @@ export function seriesChangePct(values: number[]): number {
   return getPercentChangeFromSeries(values);
 }
 
-/** Portfolio return minus BTC return over a time-aligned window. */
+/** Portfolio return minus BTC return over a time-aligned window only. */
 export function vsBtcDeltaPct(
   portfolioValues: number[],
   btcValues: number[],
@@ -131,36 +147,39 @@ export function vsBtcDeltaPct(
   btcTimestamps?: number[],
 ): number | null {
   if (portfolioValues.length < 2 || btcValues.length < 2) return null;
-
   if (
-    portfolioTimestamps &&
-    btcTimestamps &&
-    portfolioTimestamps.length === portfolioValues.length &&
-    btcTimestamps.length === btcValues.length
+    !portfolioTimestamps ||
+    !btcTimestamps ||
+    portfolioTimestamps.length !== portfolioValues.length ||
+    btcTimestamps.length !== btcValues.length
   ) {
-    const overlay = buildRelativeOverlay(
-      portfolioValues,
-      portfolioTimestamps,
-      btcValues,
-      btcTimestamps,
-    );
-    if (overlay) return overlay.vsBtcPct;
+    return null;
   }
-
-  const aligned = alignSeries(portfolioValues, btcValues);
-  return seriesChangePct(aligned.a) - seriesChangePct(aligned.b);
+  return (
+    buildRelativeOverlay(portfolioValues, portfolioTimestamps, btcValues, btcTimestamps)?.vsBtcPct ??
+    null
+  );
 }
+
+export type RelativeOverlay = {
+  portfolio: number[];
+  btc: number[];
+  timestamps: number[];
+  vsBtcPct: number;
+  /** Only time-aligned overlays are honest enough to chart / cache. */
+  alignMode: 'time';
+};
 
 /**
  * Build rebased portfolio + BTC overlay.
- * Prefers time alignment; falls back to index alignment so the chart still loads.
+ * Time alignment only — index pairing is rejected (pairs unrelated dates → fake vs%).
  */
 export function buildRelativeOverlay(
   portfolioValues: number[],
   portfolioTimestamps: number[],
   btcValues: number[],
   btcTimestamps: number[],
-): { portfolio: number[]; btc: number[]; timestamps: number[]; vsBtcPct: number } | null {
+): RelativeOverlay | null {
   const byTime = alignSeriesByTime(
     portfolioValues,
     portfolioTimestamps,
@@ -168,43 +187,32 @@ export function buildRelativeOverlay(
     btcTimestamps,
   );
 
-  if (byTime && byTime.a.length >= 2) {
-    return {
-      portfolio: rebaseTo100(byTime.a),
-      btc: rebaseTo100(byTime.b),
-      timestamps: byTime.timestamps,
-      vsBtcPct: seriesChangePct(byTime.a) - seriesChangePct(byTime.b),
-    };
+  if (!byTime || byTime.a.length < 2) return null;
+  // Interpolation can still yield ≤0 at the grid edge — drop those samples.
+  const pairs: Array<{ a: number; b: number; t: number }> = [];
+  for (let i = 0; i < byTime.a.length; i++) {
+    if (byTime.a[i] > 0 && byTime.b[i] > 0) {
+      pairs.push({ a: byTime.a[i], b: byTime.b[i], t: byTime.timestamps[i] });
+    }
   }
+  if (pairs.length < 2) return null;
 
-  // Fallback: index sample + evenly spaced timestamps from portfolio window
-  if (portfolioValues.length < 2 || btcValues.length < 2) return null;
-  const aligned = alignSeries(portfolioValues, btcValues);
-  if (aligned.a.length < 2) return null;
+  const portfolio = rebaseTo100(pairs.map((p) => p.a));
+  const btc = rebaseTo100(pairs.map((p) => p.b));
+  if (portfolio.length < 2 || btc.length < 2) return null;
 
-  const prepared = prepareSeries(portfolioValues, portfolioTimestamps);
-  let timestamps: number[];
-  if (prepared && prepared.timestamps.length >= 2) {
-    const start = prepared.timestamps[0];
-    const end = prepared.timestamps[prepared.timestamps.length - 1];
-    timestamps = Array.from(
-      { length: aligned.a.length },
-      (_, i) => start + ((end - start) * i) / Math.max(aligned.a.length - 1, 1),
-    );
-  } else {
-    const now = Math.floor(Date.now() / 1000);
-    const span = 30 * 86400;
-    timestamps = Array.from(
-      { length: aligned.a.length },
-      (_, i) => now - span + (span * i) / Math.max(aligned.a.length - 1, 1),
-    );
-  }
+  // Flat BTC after rebase ⇒ bad/zero input, not a real benchmark month.
+  if (rebasedRange(btc) < 0.05) return null;
+
+  // End gap on rebased series ≡ return differential (honest single number).
+  const vsBtcPct = portfolio[portfolio.length - 1] - btc[btc.length - 1];
 
   return {
-    portfolio: rebaseTo100(aligned.a),
-    btc: rebaseTo100(aligned.b),
-    timestamps,
-    vsBtcPct: seriesChangePct(aligned.a) - seriesChangePct(aligned.b),
+    portfolio,
+    btc,
+    timestamps: pairs.map((p) => p.t),
+    vsBtcPct,
+    alignMode: 'time',
   };
 }
 

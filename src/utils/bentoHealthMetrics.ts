@@ -2,7 +2,7 @@ import type { PortfolioHealthScore } from './portfolioHealthScore';
 import { computeAllocationShares, type AllocationShares } from './cutQueue';
 import { drawdownPct } from './chartSeries';
 import type { GroupedPoolPosition, WalletToken } from '../api/walletTypes';
-import { generateSparklineValues } from './chartData';
+import { getPercentChangeFromSeries } from './chartData';
 
 export type ArcScores = {
   risk: number;
@@ -27,9 +27,12 @@ export type DailyPerformanceMetrics = {
 };
 
 export type DeviationMetrics = {
+  /** Net worth return − BTC return (pp), end of window. */
   vsBtcPct: number;
-  underperformed: boolean;
+  portfolioReturnPct: number;
+  btcReturnPct: number;
   narrative: string;
+  /** Chart badge at the last point. */
   maxGapIndex: number;
   maxGapPct: number;
 };
@@ -111,40 +114,50 @@ export function computeArcScores(input: {
   };
 }
 
+/**
+ * Deviation = net worth return vs BTC return on the same rebased window.
+ * Chart series are already aligned + rebased to 100 — no extra math.
+ */
 export function computeDeviationMetrics(
-  vsBtcPct: number | null,
-  portfolioRebased: number[],
-  btcRebased: number[] | null,
+  portfolioSeries: number[],
+  btcSeries: number[] | null,
 ): DeviationMetrics {
-  const vs = vsBtcPct ?? 0;
-  const underperformed = vs < 0;
-  const abs = Math.abs(vs);
+  const empty: DeviationMetrics = {
+    vsBtcPct: 0,
+    portfolioReturnPct: 0,
+    btcReturnPct: 0,
+    narrative: 'Waiting on portfolio and BTC series for this window…',
+    maxGapIndex: 0,
+    maxGapPct: 0,
+  };
 
-  let maxGapIndex = 0;
-  let maxGapPct = 0;
-  if (btcRebased && portfolioRebased.length >= 2 && btcRebased.length >= 2) {
-    const n = Math.min(portfolioRebased.length, btcRebased.length);
-    for (let i = 0; i < n; i++) {
-      const gap = portfolioRebased[i] - btcRebased[i];
-      if (Math.abs(gap) >= Math.abs(maxGapPct)) {
-        maxGapPct = gap;
-        maxGapIndex = i;
-      }
-    }
+  if (
+    portfolioSeries.length < 2 ||
+    !btcSeries ||
+    btcSeries.length !== portfolioSeries.length
+  ) {
+    return empty;
   }
 
-  const narrative = underperformed
-    ? `Portfolio underperformed its benchmark by ${abs.toFixed(2)}% during this window.`
-    : vs > 0
-      ? `Portfolio outperformed its benchmark by ${abs.toFixed(2)}% over this window.`
-      : 'Portfolio tracked its benchmark closely over this window.';
+  const portfolioReturnPct = portfolioSeries[portfolioSeries.length - 1] - 100;
+  const btcReturnPct = btcSeries[btcSeries.length - 1] - 100;
+  const vsBtcPct = portfolioReturnPct - btcReturnPct;
+  const abs = Math.abs(vsBtcPct);
+
+  const narrative =
+    vsBtcPct < 0
+      ? `Net worth ${formatSignedPct(portfolioReturnPct)} vs BTC ${formatSignedPct(btcReturnPct)} — behind by ${abs.toFixed(2)}pp this window.`
+      : vsBtcPct > 0
+        ? `Net worth ${formatSignedPct(portfolioReturnPct)} vs BTC ${formatSignedPct(btcReturnPct)} — ahead by ${abs.toFixed(2)}pp this window.`
+        : `Net worth ${formatSignedPct(portfolioReturnPct)} matched BTC ${formatSignedPct(btcReturnPct)} this window.`;
 
   return {
-    vsBtcPct: vs,
-    underperformed,
+    vsBtcPct,
+    portfolioReturnPct,
+    btcReturnPct,
     narrative,
-    maxGapIndex,
-    maxGapPct,
+    maxGapIndex: portfolioSeries.length - 1,
+    maxGapPct: vsBtcPct,
   };
 }
 
@@ -153,10 +166,57 @@ function startOfDayKey(unixSeconds: number): string {
   return `${d.getFullYear()}-${d.getMonth()}-${d.getDate()}`;
 }
 
-/** Build calendar heatmap for the month containing the last timestamp. */
+function changeFromEndpoints(values: number[]): { usd: number; pct: number } {
+  if (values.length < 2) return { usd: 0, pct: 0 };
+  const first = values[0];
+  const last = values[values.length - 1];
+  const usd = last - first;
+  const pct = first !== 0 ? (usd / first) * 100 : 0;
+  return { usd, pct };
+}
+
+/**
+ * Hero metric for the Daily Performance card: today's move (not month-to-date).
+ * Order: intraday today → last day-over-day close → short window series (≤36h).
+ */
+function heroDailyChange(
+  rawValues: number[],
+  timestamps: number[],
+  dailyCloses: Array<{ day: number; value: number }>,
+): { usd: number; pct: number } {
+  const aligned =
+    rawValues.length >= 2 && timestamps.length === rawValues.length ? timestamps : null;
+
+  if (aligned) {
+    const todayKey = startOfDayKey(Date.now() / 1000);
+    const todays: number[] = [];
+    for (let i = 0; i < rawValues.length; i++) {
+      if (startOfDayKey(aligned[i]) === todayKey) todays.push(rawValues[i]);
+    }
+    if (todays.length >= 2) return changeFromEndpoints(todays);
+
+    const span = aligned[aligned.length - 1] - aligned[0];
+    // Day / hour chart window — endpoints are the real "daily" move.
+    if (span > 0 && span <= 36 * 3600) return changeFromEndpoints(rawValues);
+  }
+
+  if (dailyCloses.length >= 2) {
+    const prev = dailyCloses[dailyCloses.length - 2].value;
+    const last = dailyCloses[dailyCloses.length - 1].value;
+    const usd = last - prev;
+    const pct = prev !== 0 ? (usd / prev) * 100 : 0;
+    return { usd, pct };
+  }
+
+  return { usd: 0, pct: 0 };
+}
+
+/** Build calendar heatmap for the current month; hero % is today's change. */
 export function computeDailyPerformance(
   rawValues: number[],
   timestamps: number[],
+  /** Prefer day-chart series for the hero metric (matches BalanceOverview 1D). */
+  heroSource?: { values: number[]; timestamps: number[] },
 ): DailyPerformanceMetrics {
   const now = new Date();
   const year = now.getFullYear();
@@ -178,37 +238,28 @@ export function computeDailyPerformance(
     if (value != null) dailyCloses.push({ day, value });
   }
 
-  // If sparse data, synthesize demo-like returns from series endpoints
-  let periodChangeUsd = 0;
-  let periodChangePct = 0;
   const dailyReturns = new Map<number, number>();
-
-  if (dailyCloses.length >= 2) {
-    const first = dailyCloses[0].value;
-    const last = dailyCloses[dailyCloses.length - 1].value;
-    periodChangeUsd = last - first;
-    periodChangePct = first !== 0 ? (periodChangeUsd / first) * 100 : 0;
-
-    for (let i = 1; i < dailyCloses.length; i++) {
-      const prev = dailyCloses[i - 1].value;
-      const curr = dailyCloses[i].value;
-      if (prev !== 0) {
-        dailyReturns.set(dailyCloses[i].day, ((curr - prev) / prev) * 100);
-      }
-    }
-  } else if (rawValues.length >= 2) {
-    const first = rawValues[0];
-    const last = rawValues[rawValues.length - 1];
-    periodChangeUsd = last - first;
-    periodChangePct = first !== 0 ? (periodChangeUsd / first) * 100 : 0;
-    // Distribute synthetic daily returns across month from sparkline shape
-    const synth = generateSparklineValues('daily-heat', daysInMonth, 100, periodChangePct >= 0 ? 'up' : 'down');
-    for (let day = 2; day <= daysInMonth; day++) {
-      const prev = synth[day - 2];
-      const curr = synth[day - 1];
-      if (prev !== 0) dailyReturns.set(day, ((curr - prev) / prev) * 100);
+  for (let i = 1; i < dailyCloses.length; i++) {
+    const prev = dailyCloses[i - 1].value;
+    const curr = dailyCloses[i].value;
+    if (prev !== 0) {
+      dailyReturns.set(dailyCloses[i].day, ((curr - prev) / prev) * 100);
     }
   }
+
+  // Hero = 1D net-worth move (same as BalanceOverview / Zerion day chart: first→last).
+  // Do NOT slice to calendar-today — that is midnight→now and diverges from the ~24h window.
+  // Without a day series, fall back to intraday / last DoD on the month chart (never MTD).
+  const hero =
+    heroSource && heroSource.values.length >= 2
+      ? changeFromEndpoints(heroSource.values)
+      : heroDailyChange(rawValues, timestamps, dailyCloses);
+  const mtdPct =
+    dailyCloses.length >= 2
+      ? getPercentChangeFromSeries(dailyCloses.map((c) => c.value))
+      : rawValues.length >= 2 && timestamps.length === rawValues.length
+        ? getPercentChangeFromSeries(rawValues)
+        : hero.pct;
 
   const firstWeekday = new Date(year, month, 1).getDay(); // 0 Sun
   const cells: HeatmapCell[] = [];
@@ -234,22 +285,26 @@ export function computeDailyPerformance(
     cells.push({ day: day > 31 ? day - 31 : day, returnPct: null, inMonth: false });
   }
 
-  const insight = buildDailyInsight(dailyReturns, periodChangePct);
+  const insight = buildDailyInsight(dailyReturns, hero.pct, mtdPct);
 
   const monthLabel = now.toLocaleString('en-US', { month: 'long' });
 
   return {
-    periodChangeUsd,
-    periodChangePct,
+    periodChangeUsd: hero.usd,
+    periodChangePct: hero.pct,
     insight,
     cells,
     monthLabel,
   };
 }
 
-function buildDailyInsight(dailyReturns: Map<number, number>, periodChangePct: number): string {
+function buildDailyInsight(
+  dailyReturns: Map<number, number>,
+  dayChangePct: number,
+  mtdChangePct: number,
+): string {
   const entries = [...dailyReturns.entries()];
-  if (entries.length === 0) {
+  if (entries.length === 0 && dayChangePct === 0) {
     return 'Not enough daily history yet — connect and wait for chart data.';
   }
 
@@ -260,14 +315,17 @@ function buildDailyInsight(dailyReturns: Map<number, number>, periodChangePct: n
   const earlyAvg =
     early.length > 0 ? early.reduce((s, [, r]) => s + r, 0) / early.length : 0;
 
-  if (periodChangePct > 0 && midAvg > earlyAvg) {
+  if (entries.length >= 4 && mtdChangePct > 0 && midAvg > earlyAvg) {
     return 'Your portfolio saw the strongest gains during mid-month sessions, offsetting early-month volatility.';
   }
-  if (periodChangePct < 0) {
+  if (dayChangePct < -1 || mtdChangePct < 0) {
     return 'Daily moves were choppy this month — risk and concentration are dragging consistency.';
   }
-  if (periodChangePct > 2) {
+  if (mtdChangePct > 2 && entries.length >= 4) {
     return 'Steady daily gains compounded through the month with limited giveback.';
+  }
+  if (Math.abs(dayChangePct) < 0.5) {
+    return 'Today is quiet so far — the heatmap shows how the rest of the month has traded.';
   }
   return 'Daily performance was mixed — watch concentration on the largest bags.';
 }

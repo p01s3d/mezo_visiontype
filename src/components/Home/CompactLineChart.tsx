@@ -26,7 +26,7 @@ export function CompactLineChart({
   data,
   overlayData = null,
   color = CHART_STROKE_COLOR,
-  overlayColor = '#A1A1AA',
+  overlayColor = 'var(--chart-benchmark, var(--color-fgMuted, #6c6a64))',
   height = 28,
   showArea = true,
   width = 96,

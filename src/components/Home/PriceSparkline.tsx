@@ -31,11 +31,11 @@ export const PriceSparkline = ({
     color ??
     (series && series.length >= 2
       ? series[series.length - 1] < series[0]
-        ? '#CF202F'
-        : '#0052FF'
+        ? 'var(--color-fgNegative, #c64545)'
+        : 'var(--color-fgPositive, #2f7a4a)'
       : trend === 'down'
-        ? '#CF202F'
-        : '#0052FF');
+        ? 'var(--color-fgNegative, #c64545)'
+        : 'var(--color-fgPositive, #2f7a4a)');
 
   return <CompactLineChart color={strokeColor} data={data} height={height} showArea width={width} />;
 };

@@ -1,5 +1,6 @@
 import type { Protocol, YieldPool } from '../api/defillama';
 import type { GroupedPoolPosition, PersonalPosition, WalletToken } from '../api/walletTypes';
+import { isBorrowSidePosition } from './personalPositions';
 import type {
   HealthCandidate,
   HealthSignal,
@@ -245,7 +246,11 @@ function candidateFromPersonal(
   const shareOfPortfolioPct = totalUsd > 0 ? (position.valueUsd / totalUsd) * 100 : 0;
   const signals: HealthSignal[] = [];
 
-  if (position.debtUsd > 0 && position.valueUsd > 0) {
+  if (
+    !isBorrowSidePosition(position) &&
+    position.debtUsd > 0 &&
+    position.valueUsd > 0
+  ) {
     const ltv = position.debtUsd / position.valueUsd;
     if (ltv > 0.75) {
       signals.push({

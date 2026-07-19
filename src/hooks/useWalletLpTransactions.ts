@@ -1,9 +1,10 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import type { Address } from 'viem';
 import type { LpTransaction } from '../api/walletTypes';
 import { fetchWalletLpTransactions, getZerionApiKeyIssue } from '../api/zerion';
 import type { DataSource } from '../components/AssetList';
 import {
+  clearWalletLpTxCache,
   isCacheFresh,
   isCacheUsable,
   readJsonCache,
@@ -63,10 +64,12 @@ export function useWalletLpTransactions(
   const [missingApiKey, setMissingApiKey] = useState(Boolean(getZerionApiKeyIssue()));
   const [apiKeyIssue, setApiKeyIssue] = useState<'missing' | 'empty' | null>(getZerionApiKeyIssue());
   const [updatedAt, setUpdatedAt] = useState<Date | null>(null);
+  const fetchGen = useRef(0);
 
   const load = useCallback(
     async (force = false) => {
       if (!needsLpTransactions(dataSource)) {
+        fetchGen.current += 1;
         setTransactions([]);
         setError(null);
         setLoading(false);
@@ -74,6 +77,7 @@ export function useWalletLpTransactions(
       }
 
       if (!address) {
+        fetchGen.current += 1;
         setTransactions([]);
         setUpdatedAt(null);
         setLoading(false);
@@ -85,6 +89,7 @@ export function useWalletLpTransactions(
 
       const keyIssue = getZerionApiKeyIssue();
       if (keyIssue) {
+        fetchGen.current += 1;
         setMissingApiKey(true);
         setApiKeyIssue(keyIssue);
         setTransactions([]);
@@ -94,8 +99,18 @@ export function useWalletLpTransactions(
         return;
       }
 
+      const gen = ++fetchGen.current;
+
+      // Refresh keeps current txs on screen until the new list arrives.
+      if (force) {
+        clearWalletLpTxCache(address);
+        setError(null);
+        setMissingApiKey(false);
+        setApiKeyIssue(null);
+      }
+
       const cache = resolveCache(address);
-      if (cache) {
+      if (!force && cache) {
         setTransactions(cache.transactions);
         setUpdatedAt(cache.fetchedAt ? new Date(cache.fetchedAt) : null);
         setMissingApiKey(false);
@@ -108,13 +123,16 @@ export function useWalletLpTransactions(
         return;
       }
 
-      setLoading(!cache);
-      setError(null);
-      setMissingApiKey(false);
-      setApiKeyIssue(null);
+      if (!force) {
+        setLoading(!cache);
+        setError(null);
+        setMissingApiKey(false);
+        setApiKeyIssue(null);
+      }
 
       try {
         const nextTransactions = await fetchWalletLpTransactions(address);
+        if (gen !== fetchGen.current) return;
         const next: LpTransactionsCache = {
           address,
           transactions: nextTransactions,
@@ -124,11 +142,14 @@ export function useWalletLpTransactions(
         setTransactions(nextTransactions);
         setUpdatedAt(new Date(next.fetchedAt!));
       } catch (err) {
+        if (gen !== fetchGen.current) return;
         if (!cache) {
           setError(err instanceof Error ? err.message : 'Failed to load LP transactions');
         }
       } finally {
-        setLoading(false);
+        if (gen === fetchGen.current) {
+          setLoading(false);
+        }
       }
     },
     [address, dataSource],

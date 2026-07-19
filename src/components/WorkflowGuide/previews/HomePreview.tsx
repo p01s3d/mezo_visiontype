@@ -13,14 +13,14 @@ export function HomePreview() {
       <BalanceOverview
         chartPeriod="day"
         chartValues={demoPortfolio}
-        isConnected={false}
+        dataMode="demo"
         loading={false}
         portfolioChangePct={4.1}
         totalBalanceUsd={DEMO_NET_WORTH_USD}
       />
       <BalanceBreakdown
         bleedX={0}
-        isConnected={false}
+        dataMode="demo"
         loading={false}
         poolPositions={DEMO_POOL_POSITIONS}
         walletTokens={DEMO_WALLET_TOKENS}

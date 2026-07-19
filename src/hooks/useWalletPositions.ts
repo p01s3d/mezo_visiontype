@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import type { Address } from 'viem';
 import type { GroupedPoolPosition, PersonalPosition, PoolPositionLeg, WalletToken } from '../api/walletTypes';
 import {
@@ -17,6 +17,7 @@ import {
   withPoolUnrealizedPnl,
 } from '../utils/poolPnl';
 import {
+  clearWalletPositionsCache,
   isCacheFresh,
   isCacheUsable,
   readJsonCache,
@@ -34,6 +35,10 @@ type WalletPositionsState = {
   missingApiKey: boolean;
   apiKeyIssue: 'missing' | 'empty' | null;
   updatedAt: Date | null;
+  /** True when the current book was hydrated from address cache (usable ≤7d). */
+  fromCache: boolean;
+  /** True while an explicit Refresh is refetching; UI keeps the previous book. */
+  isRefreshing: boolean;
   refresh: () => void;
 };
 
@@ -114,7 +119,12 @@ function needsPoolPnl(dataSource: DataSource, view: DataView): boolean {
 }
 
 function needsTokens(dataSource: DataSource): boolean {
-  return dataSource === 'tokens' || dataSource === 'home' || dataSource === 'holdings';
+  return (
+    dataSource === 'tokens' ||
+    dataSource === 'home' ||
+    dataSource === 'holdings' ||
+    dataSource === 'personal'
+  );
 }
 
 function needsPortfolio(dataSource: DataSource): boolean {
@@ -149,6 +159,10 @@ export function useWalletPositions(
   const [missingApiKey, setMissingApiKey] = useState(Boolean(getZerionApiKeyIssue()));
   const [apiKeyIssue, setApiKeyIssue] = useState<'missing' | 'empty' | null>(getZerionApiKeyIssue());
   const [updatedAt, setUpdatedAt] = useState<Date | null>(null);
+  const [fromCache, setFromCache] = useState(false);
+  const [isRefreshing, setIsRefreshing] = useState(false);
+  const fetchGen = useRef(0);
+  const refreshingRef = useRef(false);
 
   const wantsPersonal = needsPersonalPositions(dataSource);
   const wantsPools = needsPoolPositions(dataSource);
@@ -156,14 +170,22 @@ export function useWalletPositions(
   const wantsTokens = needsTokens(dataSource);
   const wantsPortfolio = needsPortfolio(dataSource);
 
+  const endRefresh = useCallback(() => {
+    refreshingRef.current = false;
+    setIsRefreshing(false);
+  }, []);
+
   const load = useCallback(
     async (force = false) => {
       if (!address) {
+        fetchGen.current += 1;
         setPositions([]);
         setPoolPositions([]);
         setTokens([]);
         setTotalBalanceUsd(null);
         setUpdatedAt(null);
+        setFromCache(false);
+        endRefresh();
         setLoading(false);
         setError(null);
         setMissingApiKey(Boolean(getZerionApiKeyIssue()));
@@ -173,6 +195,7 @@ export function useWalletPositions(
 
       const keyIssue = getZerionApiKeyIssue();
       if (keyIssue) {
+        fetchGen.current += 1;
         setMissingApiKey(true);
         setApiKeyIssue(keyIssue);
         setPositions([]);
@@ -180,9 +203,28 @@ export function useWalletPositions(
         setTokens([]);
         setTotalBalanceUsd(null);
         setUpdatedAt(null);
+        setFromCache(false);
+        endRefresh();
         setLoading(false);
         setError(null);
         return;
+      }
+
+      // Don't let a silent effect re-entry cancel/stampede an in-flight Refresh.
+      if (!force && refreshingRef.current) {
+        return;
+      }
+
+      const gen = ++fetchGen.current;
+
+      // Explicit Refresh: keep current book on screen (SWR). Only the navbar spinner moves.
+      if (force) {
+        clearWalletPositionsCache(address);
+        refreshingRef.current = true;
+        setIsRefreshing(true);
+        setError(null);
+        setMissingApiKey(false);
+        setApiKeyIssue(null);
       }
 
       const cache = resolveCache(address);
@@ -200,29 +242,41 @@ export function useWalletPositions(
         (!needsPnlFetch || hasCachedPnl) &&
         (!wantsTokens || hasCachedTokens);
 
-      if (cache) {
-        applyCacheToState(cache, wantsPoolPnl, {
-          setPositions,
-          setPoolPositions,
-          setTokens,
-          setTotalBalanceUsd,
-          setUpdatedAt,
-        });
+      if (!force) {
+        if (cache) {
+          applyCacheToState(cache, wantsPoolPnl, {
+            setPositions,
+            setPoolPositions,
+            setTokens,
+            setTotalBalanceUsd,
+            setUpdatedAt,
+          });
+          setFromCache(true);
+          setMissingApiKey(false);
+          setApiKeyIssue(null);
+          setError(null);
+        } else {
+          // Connected, no usable cache — zeros only (never leave prior address / demo).
+          setPositions([]);
+          setPoolPositions([]);
+          setTokens([]);
+          setTotalBalanceUsd(null);
+          setUpdatedAt(null);
+          setFromCache(false);
+        }
+
+        if (allFresh) {
+          setLoading(false);
+          endRefresh();
+          return;
+        }
+
+        // Stale-while-revalidate: keep cached numbers; skeleton only when empty.
+        setLoading(!cache);
+        setError(null);
         setMissingApiKey(false);
         setApiKeyIssue(null);
-        setError(null);
       }
-
-      if (!force && allFresh) {
-        setLoading(false);
-        return;
-      }
-
-      // Stale-while-revalidate: keep cached numbers on screen; only skeleton when empty.
-      setLoading(!cache);
-      setError(null);
-      setMissingApiKey(false);
-      setApiKeyIssue(null);
 
       try {
         let nextPositions = cache?.positions ?? [];
@@ -258,6 +312,8 @@ export function useWalletPositions(
           tokensFetchedAt = Date.now();
         }
 
+        if (gen !== fetchGen.current) return;
+
         const nextCache: WalletCache = {
           address,
           positions: nextPositions,
@@ -272,23 +328,38 @@ export function useWalletPositions(
         };
         persistCache(nextCache);
 
+        // Atomic commit: swap in the new book when the full fetch finishes.
         setPositions(nextPositions);
         setPoolPositions(buildPoolPositions(nextPoolLegs, nextPnlByFungibleId, wantsPoolPnl));
         setTokens(nextTokens);
         setTotalBalanceUsd(nextTotal);
+        setFromCache(false);
         setUpdatedAt(
           new Date(portfolioFetchedAt ?? pnlFetchedAt ?? positionsFetchedAt ?? tokensFetchedAt ?? Date.now()),
         );
       } catch (err) {
-        // Keep hydrated cache on screen if the refresh fails.
+        if (gen !== fetchGen.current) return;
+        // Keep on-screen book if we had cache/state; only error when there was nothing to show.
         if (!cache) {
           setError(err instanceof Error ? err.message : 'Failed to load wallet data');
+          setFromCache(false);
         }
       } finally {
-        setLoading(false);
+        if (gen === fetchGen.current) {
+          setLoading(false);
+          endRefresh();
+        }
       }
     },
-    [address, wantsPersonal, wantsPools, wantsPoolPnl, wantsTokens, wantsPortfolio],
+    [
+      address,
+      wantsPersonal,
+      wantsPools,
+      wantsPoolPnl,
+      wantsTokens,
+      wantsPortfolio,
+      endRefresh,
+    ],
   );
 
   useEffect(() => {
@@ -305,6 +376,8 @@ export function useWalletPositions(
     missingApiKey,
     apiKeyIssue,
     updatedAt,
+    fromCache,
+    isRefreshing,
     refresh: () => {
       void load(true);
     },

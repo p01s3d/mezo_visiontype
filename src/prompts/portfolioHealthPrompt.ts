@@ -78,7 +78,7 @@ Rules:
 - Tone: sharp, experimental — not corporate. No emojis.
 - narrative: 1–2 sentences, ≤180 characters.
 - bento.risk / consistency / diversification: floats 0–1. Use the provided ruleHints as a prior; adjust mildly (±0.15) if factors justify it.
-- bento.deviationNarrative: one sentence about portfolio vs BTC benchmark using vsBtcPct.
+- bento.deviationNarrative: one sentence about portfolio vs BTC. MUST use the exact vsBtcPct figure from facts (same number as the UI headline). Do not invent a different percentage.
 - bento.dailyInsight: one sentence about the period return / daily pattern using portfolioChangePct and drawdown.
 - bento.dailyHighlight: optional short substring of dailyInsight to emphasize.
 - bento.cryptoInsight: one sentence about DefiLlama trending movers (use only names/% from trendingProtocols).

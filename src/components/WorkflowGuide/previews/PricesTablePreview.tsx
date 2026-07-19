@@ -31,7 +31,7 @@ const PREVIEW_ASSETS: MarketAsset[] = [
     priceUsd: 178.42,
     changePct: 2.14,
     iconUrl: 'https://assets.coincap.io/assets/icons/sol@2x.png',
-    sparkColor: '#0052FF',
+    sparkColor: 'var(--color-fgPositive, #2f7a4a)',
   },
   {
     id: 'usd-coin',
@@ -40,7 +40,7 @@ const PREVIEW_ASSETS: MarketAsset[] = [
     priceUsd: 1.0,
     changePct: 0.01,
     iconUrl: 'https://assets.coincap.io/assets/icons/usdc@2x.png',
-    sparkColor: '#0052FF',
+    sparkColor: 'var(--color-fgPositive, #2f7a4a)',
   },
 ];
 
@@ -61,7 +61,7 @@ function ChangeCell({ changePct }: { changePct: number }) {
 
 export function PricesTablePreview() {
   return (
-    <VStack gap={0} width="100%">
+    <VStack gap={0} minWidth={0} width="100%">
       <HStack justifyContent="space-between" paddingBottom={1.5} width="100%">
         <Text font="title3">Prices</Text>
         <Text color="fgMuted" font="label2">

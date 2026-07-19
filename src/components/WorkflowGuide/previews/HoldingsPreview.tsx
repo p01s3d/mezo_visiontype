@@ -12,7 +12,6 @@ import {
 import { DashboardSectionDivider } from '../../Home/TradeRail';
 import { HoldingsList } from '../../Home/HoldingsList';
 import { RollingUsdBalance } from '../../Home/RollingUsdBalance';
-import { GUIDE_PREVIEW_HEIGHT } from '../previewConstants';
 
 function CategoryTab({
   active,
@@ -50,8 +49,8 @@ export function HoldingsPreview() {
   );
 
   return (
-    <Box height={GUIDE_PREVIEW_HEIGHT} minWidth={0} overflow="hidden" width="100%">
-      <VStack gap={0} height="100%" width="100%">
+    <Box minWidth={0} overflow="hidden" width="100%">
+      <VStack gap={0} width="100%">
         <VStack flexShrink={0} gap={0.5} paddingBottom={1.5} width="100%">
           <RollingUsdBalance font="display2" value={DEMO_NET_WORTH_USD} />
           <Text color="fgMuted" font="label2">

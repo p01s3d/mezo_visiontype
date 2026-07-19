@@ -1,4 +1,4 @@
-import { useCallback, useMemo, useState } from 'react';
+import { useCallback, useMemo, useState, type CSSProperties } from 'react';
 import type { ColorScheme } from '@coinbase/cds-common';
 import { ThemeProvider } from '@coinbase/cds-web';
 import { PortalProvider } from '@coinbase/cds-web/overlays';
@@ -7,12 +7,11 @@ import { Box, HStack, VStack } from '@coinbase/cds-web/layout';
 import { MediaQueryProvider } from '@coinbase/cds-web/system';
 import { Navbar } from './components/Navbar';
 import { AssetList } from './components/AssetList';
-import { HomeDashboard, HoldingsView, PoolsView, TransactionsView } from './components/Home';
+import { HomeDashboard, HoldingsView, BorrowView, PoolsView, VoteView, TransactionsView } from './components/Home';
 import { DefiSidebar } from './components/Sidebar';
 import { WorkflowGuide } from './components/WorkflowGuide';
 import { MezoApp } from './components/Mezo/MezoApp';
 import { ALL_NAV } from './data/navConfig';
-import { DEMO_POOL_POSITIONS } from './data/demoPools';
 import { useDefiData } from './hooks/useDefiData';
 import { usePositionHealth } from './hooks/usePositionHealth';
 import { clearWalletChartCache, useWalletBalanceChart } from './hooks/useWalletBalanceChart';
@@ -20,6 +19,7 @@ import { clearFungibleChartsMemory } from './hooks/useFungibleCharts';
 import { clearSleeveReturnsCache } from './hooks/useSleeveMonthPerformance';
 import { useWalletLpTransactions } from './hooks/useWalletLpTransactions';
 import { useWalletPositions } from './hooks/useWalletPositions';
+import { usePortfolioSnapshot } from './hooks/usePortfolioSnapshot';
 import { TradeIntentProvider } from './hooks/useTradeIntent';
 import type { TokenCategory } from './utils/tokenCategories';
 import { riskyTransactionIds } from './utils/transactionHealth';
@@ -60,6 +60,8 @@ const DashboardApp = () => {
   const isHoldings = dataSource === 'holdings';
   const isTransactions = dataSource === 'transactions';
   const isPools = dataSource === 'personal' && activeView === 'liquidity';
+  const isBorrow = activeNavItem.id === 'borrow';
+  const isVote = activeNavItem.id === 'vote';
 
   const [activeColorScheme, setActiveColorScheme] = useState<ColorScheme>('light');
   const [chartPeriod, setChartPeriod] = useState<ChartPeriod>('day');
@@ -76,6 +78,8 @@ const DashboardApp = () => {
     missingApiKey,
     apiKeyIssue,
     updatedAt: personalUpdatedAt,
+    fromCache,
+    isRefreshing,
     refresh: refreshPersonal,
   } = useWalletPositions(address, dataSource, activeView);
   const {
@@ -86,7 +90,6 @@ const DashboardApp = () => {
     apiKeyIssue: lpApiKeyIssue,
     refresh: refreshLpTransactions,
   } = useWalletLpTransactions(address, dataSource);
-  const displayPoolPositions = isConnected ? poolPositions : DEMO_POOL_POSITIONS;
 
   const displayTotal = totalBalanceUsd ?? 0;
   const balanceChart = useWalletBalanceChart(
@@ -94,6 +97,14 @@ const DashboardApp = () => {
     isConnected,
     displayTotal,
     chartPeriod,
+    chartRefreshEpoch,
+  );
+  /** Dedicated 1D series so Daily Performance matches net-worth day %, not MTD. */
+  const dayChart = useWalletBalanceChart(
+    address,
+    isConnected,
+    displayTotal,
+    'day',
     chartRefreshEpoch,
   );
   const bentoChart = useWalletBalanceChart(
@@ -104,31 +115,53 @@ const DashboardApp = () => {
     chartRefreshEpoch,
   );
 
+  const snapshot = usePortfolioSnapshot({
+    address,
+    isConnected,
+    walletTokens,
+    poolPositions,
+    personalPositions,
+    lpTransactions,
+    totalBalanceUsd,
+    bookLoading: personalLoading,
+    bookError: personalError,
+    fromCache,
+    bookFetchedAt: personalUpdatedAt?.getTime() ?? null,
+    isRefreshing,
+    balanceChart,
+    bentoChart,
+  });
+
+  const needsPositionHealth = isHome || isPools || isHoldings;
+  const liveBook = snapshot.mode === 'live';
+
   const health = usePositionHealth({
     address,
-    walletTokens,
-    poolPositions: displayPoolPositions,
-    personalPositions,
+    walletTokens: snapshot.walletTokens,
+    poolPositions: snapshot.poolPositions,
+    personalPositions: snapshot.personalPositions,
     yieldPools: pools,
     protocols,
-    enabled: isHome && isConnected && !personalLoading && !loading && !balanceChart.loading,
-    dataLoading: personalLoading || loading || balanceChart.loading,
-    vsBtcPct: bentoChart.vsBtcPct ?? balanceChart.vsBtcPct,
-    portfolioChangePct: balanceChart.portfolioChangePct,
-    rawPortfolioValues: bentoChart.rawPortfolioValues.length
-      ? bentoChart.rawPortfolioValues
-      : balanceChart.rawPortfolioValues,
-    portfolioSeries: bentoChart.portfolioValues.length
-      ? bentoChart.portfolioValues
-      : balanceChart.portfolioValues,
-    btcSeries: bentoChart.btcOverlayValues ?? balanceChart.btcOverlayValues,
-    lpTransactions,
+    // Book-only gate. DefiLlama / chart loading used to flip enabled off and wipe health
+    // (skeleton → blank). Those stay on dataLoading only.
+    enabled: needsPositionHealth && liveBook && !snapshot.bookLoading,
+    dataLoading: snapshot.bookLoading || loading || snapshot.balanceChart.loading,
+    vsBtcPct: snapshot.bentoChart.vsBtcPct,
+    portfolioChangePct: snapshot.balanceChart.portfolioChangePct,
+    rawPortfolioValues: snapshot.bentoChart.rawPortfolioValues,
+    portfolioSeries: snapshot.bentoChart.portfolioValues,
+    btcSeries: snapshot.bentoChart.btcOverlayValues,
+    lpTransactions: snapshot.lpTransactions,
   });
 
   const flaggedTxIds = useMemo(
     () =>
-      riskyTransactionIds(lpTransactions, displayPoolPositions, health.verdictsByPositionId),
-    [lpTransactions, displayPoolPositions, health.verdictsByPositionId],
+      riskyTransactionIds(
+        snapshot.lpTransactions,
+        snapshot.poolPositions,
+        health.verdictsByPositionId,
+      ),
+    [snapshot.lpTransactions, snapshot.poolPositions, health.verdictsByPositionId],
   );
 
   const toggleColorScheme = () => setActiveColorScheme((s) => (s === 'light' ? 'dark' : 'light'));
@@ -165,14 +198,33 @@ const DashboardApp = () => {
     health.refresh();
   }, [address, refreshPersonal, refreshLpTransactions, health.refresh]);
 
-  const navbarTitle = showGuide ? 'Build guide' : activeNavItem.title;
+  const navbarTitle = showGuide ? 'Build a dashboard' : activeNavItem.title;
+  const isDemo = snapshot.mode === 'demo';
 
   return (
     <MediaQueryProvider>
       <ThemeProvider theme={defiTheme} activeColorScheme={activeColorScheme}>
         <PortalProvider>
           <TradeIntentProvider>
-          <HStack alignItems="stretch" background="bg" height="100vh" overflow="hidden" width="100%">
+          <HStack
+            alignItems="stretch"
+            background="bg"
+            height="100vh"
+            overflow="hidden"
+            style={
+              {
+                ['--chart-portfolio' as string]:
+                  activeColorScheme === 'dark' ? '#6fc9b6' : '#5db8a6',
+                ['--chart-benchmark' as string]:
+                  activeColorScheme === 'dark' ? '#f0b86e' : '#e8a55a',
+                ['--chart-accent' as string]:
+                  activeColorScheme === 'dark' ? '#e08a6e' : '#cc785c',
+                ['--chart-secondary' as string]:
+                  activeColorScheme === 'dark' ? '#faf9f5' : '#141413',
+              } as CSSProperties
+            }
+            width="100%"
+          >
             <DefiSidebar activeIndex={activeNavIndex} onSelect={handleNavSelect} />
             <VStack flexGrow={1} minHeight={0} overflow="auto" width="100%" zIndex={0}>
             <Navbar
@@ -181,7 +233,12 @@ const DashboardApp = () => {
               onMarkAlertRead={health.markAlertRead}
               onMarkAlertsRead={health.markAlertsRead}
               onRefresh={isConnected ? handleHomeRefresh : undefined}
-              refreshing={personalLoading || health.aiLoading || balanceChart.loading}
+              refreshing={
+                isRefreshing ||
+                snapshot.bookLoading ||
+                health.aiLoading ||
+                snapshot.balanceChart.loading
+              }
               title={navbarTitle}
               toastAlert={health.toastAlert}
               toggleColorScheme={toggleColorScheme}
@@ -202,57 +259,82 @@ const DashboardApp = () => {
               <HomeDashboard
                 aiLoading={health.aiLoading}
                 apiKeyIssue={apiKeyIssue}
-                bentoBtcSeries={bentoChart.btcOverlayValues}
+                bentoBtcSeries={snapshot.bentoChart.btcOverlayValues}
                 bentoInsights={health.bentoInsights}
                 coachInsight={health.coachInsight}
-                bentoLoading={bentoChart.loading}
-                bentoPortfolioSeries={bentoChart.portfolioValues}
-                bentoRawValues={bentoChart.rawPortfolioValues}
-                bentoTimestamps={bentoChart.timestamps}
-                bentoVsBtcPct={bentoChart.vsBtcPct}
-                chartLoading={balanceChart.loading}
+                bentoLoading={snapshot.bentoChart.loading}
+                bentoPortfolioSeries={snapshot.bentoChart.portfolioValues}
+                bentoRawTimestamps={snapshot.bentoChart.rawTimestamps}
+                bentoRawValues={snapshot.bentoChart.rawPortfolioValues}
+                bentoTimestamps={snapshot.bentoChart.timestamps}
+                chartLoading={snapshot.balanceChart.loading}
                 chartPeriod={chartPeriod}
-                chartTimestamps={balanceChart.timestamps}
-                chartValues={balanceChart.portfolioValues}
-                health={health.health}
-                isConnected={isConnected}
+                chartTimestamps={snapshot.balanceChart.timestamps}
+                chartValues={snapshot.balanceChart.portfolioValues}
+                dataMode={snapshot.mode}
+                dayRawTimestamps={dayChart.rawTimestamps}
+                dayRawValues={dayChart.rawPortfolioValues}
+                emptyReason={snapshot.emptyReason}
+                health={snapshot.mode === 'empty' ? null : health.health}
                 missingApiKey={missingApiKey}
                 missingOpenRouterKey={health.missingOpenRouterKey}
                 onAllocationNavigate={handleAllocationNavigate}
                 onChartPeriodChange={setChartPeriod}
-                personalLoading={personalLoading}
-                poolPositions={displayPoolPositions}
-                portfolioChangePct={balanceChart.portfolioChangePct}
+                personalLoading={snapshot.bookLoading}
+                poolPositions={snapshot.poolPositions}
+                portfolioChangePct={snapshot.balanceChart.portfolioChangePct}
                 protocols={protocols}
-                rawChartValues={balanceChart.rawPortfolioValues}
+                rawChartValues={snapshot.balanceChart.rawPortfolioValues}
                 refreshEpoch={chartRefreshEpoch}
-                totalBalanceUsd={totalBalanceUsd}
-                walletTokens={walletTokens}
+                totalBalanceUsd={snapshot.totalBalanceUsd}
+                walletTokens={snapshot.walletTokens}
               />
             ) : isHoldings ? (
               <HoldingsView
+                dataMode={snapshot.mode}
+                emptyReason={snapshot.emptyReason}
                 initialCategory={holdingsCategory}
-                isConnected={isConnected}
-                loading={personalLoading}
-                totalBalanceUsd={totalBalanceUsd}
+                loading={snapshot.bookLoading}
+                totalBalanceUsd={snapshot.totalBalanceUsd}
                 verdictsByPositionId={health.verdictsByPositionId}
-                walletTokens={walletTokens}
+                walletTokens={snapshot.walletTokens}
               />
             ) : isPools ? (
               <PoolsView
                 apiKeyIssue={apiKeyIssue}
-                isConnected={isConnected}
-                loading={personalLoading}
+                dataMode={snapshot.mode}
+                emptyReason={snapshot.emptyReason}
+                loading={snapshot.bookLoading}
                 missingApiKey={missingApiKey}
-                poolPositions={displayPoolPositions}
+                poolPositions={snapshot.poolPositions}
                 verdictsByPositionId={health.verdictsByPositionId}
+              />
+            ) : isBorrow ? (
+              <BorrowView
+                apiKeyIssue={apiKeyIssue}
+                dataMode={snapshot.mode}
+                emptyReason={snapshot.emptyReason}
+                loading={snapshot.bookLoading}
+                missingApiKey={missingApiKey}
+                personalPositions={snapshot.personalPositions}
+              />
+            ) : isVote ? (
+              <VoteView
+                apiKeyIssue={apiKeyIssue}
+                dataMode={snapshot.mode}
+                emptyReason={snapshot.emptyReason}
+                loading={snapshot.bookLoading}
+                missingApiKey={missingApiKey}
+                personalPositions={snapshot.personalPositions}
+                walletTokens={snapshot.walletTokens}
               />
             ) : isTransactions ? (
               <TransactionsView
+                dataMode={snapshot.mode}
+                emptyReason={snapshot.emptyReason}
                 flaggedTransactionIds={flaggedTxIds}
-                isConnected={isConnected}
-                loading={lpTransactionsLoading || personalLoading}
-                lpTransactions={lpTransactions}
+                loading={lpTransactionsLoading || snapshot.bookLoading}
+                lpTransactions={snapshot.lpTransactions}
                 riskyDepositCount={flaggedTxIds.size}
               />
             ) : (
@@ -265,10 +347,10 @@ const DashboardApp = () => {
                       search=""
                       pools={pools}
                       protocols={protocols}
-                      personalPositions={personalPositions}
-                      walletTokens={walletTokens}
+                      personalPositions={snapshot.personalPositions}
+                      walletTokens={snapshot.walletTokens}
                       loading={loading}
-                      personalLoading={personalLoading}
+                      personalLoading={snapshot.bookLoading}
                       error={error}
                       personalError={personalError ?? lpTransactionsError}
                       missingApiKey={missingApiKey || lpMissingApiKey}
@@ -281,7 +363,7 @@ const DashboardApp = () => {
                         refreshLpTransactions();
                       }}
                       pageSize={8}
-                      isConnected={isConnected}
+                      isConnected={!isDemo}
                     />
                   </Box>
                 </VStack>

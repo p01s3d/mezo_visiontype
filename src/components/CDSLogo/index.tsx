@@ -43,7 +43,7 @@ export const CDSLogo = ({ compact = false }: CDSLogoProps) => {
       <HStack alignItems="center" gap={1}>
         <PortfolioMark size={28} />
         <Text
-          aria-label="Portfolio"
+          aria-label="Get Ahead"
           font="headline"
           role="img"
           style={{ letterSpacing: '-0.01em' }}

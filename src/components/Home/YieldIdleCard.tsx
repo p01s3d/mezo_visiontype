@@ -19,9 +19,10 @@ type YieldIdleCardProps = {
   restPct: number;
 };
 
-/** Same stripe recipe as `.healthBento__allocTrack`: -45°, 3px line / 3px elevated. */
-const ALLOC_STRIPE_LINE = 'var(--color-bgLine, #dee1e6)';
-const ALLOC_STRIPE_GAP = 'var(--bento-bg-elevated, #fff)';
+/** Same stripe recipe as `.healthBento__heatCell--out`: -45°, 3px line / 3px gap @ 0.55 opacity. */
+const STRIPE_LINE = 'var(--color-bgLine, #dee1e6)';
+const STRIPE_GAP = 'var(--bento-bg, #efe9de)';
+const YIELD_REST_COLOR = 'var(--chart-accent, #cc785c)';
 
 const StripedBarComponent = memo(function StripedBarComponent(props: BarComponentProps) {
   const { dataX, x, y } = props;
@@ -40,11 +41,13 @@ const StripedBarComponent = memo(function StripedBarComponent(props: BarComponen
           x={x}
           y={y}
         >
-          <rect fill={ALLOC_STRIPE_LINE} height="6" width="3" x="0" y="0" />
-          <rect fill={ALLOC_STRIPE_GAP} height="6" width="3" x="3" y="0" />
+          <rect fill={STRIPE_LINE} height="6" width="3" x="0" y="0" />
+          <rect fill={STRIPE_GAP} height="6" width="3" x="3" y="0" />
         </pattern>
       </defs>
-      <DefaultBar {...props} fill={`url(#${uniquePatternId})`} />
+      <g opacity={0.55}>
+        <DefaultBar {...props} fill={`url(#${uniquePatternId})`} />
+      </g>
     </>
   );
 });
@@ -63,7 +66,7 @@ export function YieldIdleCard({
     <section className="healthBento__card healthBento__card--yield">
       <VStack gap={2} width="100%">
         <VStack gap={1} width="100%">
-          <Text font="label1">Matched yield</Text>
+          <Text font="label1">Potential yield</Text>
           <VStack gap={0} paddingTop={1} width="100%">
             {matchedApy != null ? (
               <InsightsRollingNumber
@@ -95,13 +98,13 @@ export function YieldIdleCard({
                   id: 'rest',
                   data: rest,
                   label: 'Rest',
-                  color: 'var(--color-fgPrimary)',
+                  color: YIELD_REST_COLOR,
                 },
                 {
                   id: 'stables',
                   data: stables,
                   label: 'Stables',
-                  color: ALLOC_STRIPE_LINE,
+                  color: STRIPE_LINE,
                   BarComponent: StripedBarComponent,
                 },
               ]}

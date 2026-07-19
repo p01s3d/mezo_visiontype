@@ -519,15 +519,20 @@ function mapPoolLegs(positions: ZerionPosition[]): PoolPositionLeg[] {
 
 function mapDefiPosition(position: ZerionPosition): PersonalPosition {
   const { attributes, relationships } = position;
+  const positionType = attributes.protocol_module ?? attributes.position_type ?? 'position';
+  const valueUsd = attributes.value ?? 0;
+  const isBorrowSide =
+    /borrow|loan|debt|variable|stable/i.test(positionType) ||
+    /borrow|loan|debt|variable|stable/i.test(attributes.name);
 
   return {
     id: position.id,
     name: attributes.name,
     protocol: attributes.protocol ?? 'Unknown',
     chain: relationships?.chain?.data?.id ?? 'unknown',
-    valueUsd: attributes.value ?? 0,
-    debtUsd: 0,
-    positionType: attributes.protocol_module ?? attributes.position_type ?? 'position',
+    valueUsd,
+    debtUsd: isBorrowSide ? Math.abs(valueUsd) : 0,
+    positionType,
   };
 }
 

@@ -1,8 +1,9 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState, type CSSProperties } from 'react';
 import { Box, HStack, VStack } from '@coinbase/cds-web/layout';
 import { Pressable } from '@coinbase/cds-web/system';
 import { Text } from '@coinbase/cds-web/typography';
 import type { GroupedPoolPosition, WalletToken } from '../../api/walletTypes';
+import type { WalletDataMode } from '../../data/portfolioSnapshot';
 import {
   useSleeveMonthPerformance,
   type SleevePerformancePeriod,
@@ -12,15 +13,6 @@ import { useInViewOnce } from '../../hooks/useInViewOnce';
 import type { SleevePerformance } from '../../utils/sleevePerformance';
 import { formatSignedPct } from '../../utils/bentoHealthMetrics';
 import { InsightsRollingNumber } from './InsightsRollingNumber';
-
-const POS_COLORS = [
-  'var(--color-fgWarning, #f5a524)',
-  'var(--color-fgPrimary, #0052ff)',
-  'var(--color-fgPositive, #098551)',
-  'var(--color-fg, #0a0b0d)',
-];
-
-const NEG_COLOR = 'var(--color-fgNegative, #cf202f)';
 
 const PERIOD_TABS: Array<{ label: string; period: SleevePerformancePeriod }> = [
   { label: '1D', period: 'day' },
@@ -48,36 +40,44 @@ function statusNote(status: SleeveSnapshotStatus, period: SleevePerformancePerio
 type AllocationPerformanceCardProps = {
   walletTokens: WalletToken[];
   poolPositions: GroupedPoolPosition[];
-  isConnected: boolean;
+  dataMode: WalletDataMode;
   refreshEpoch?: number;
 };
+
+const ENTER_STAGGER_END_MS = 632;
 
 export function AllocationPerformanceCard({
   walletTokens,
   poolPositions,
-  isConnected,
+  dataMode,
   refreshEpoch = 0,
 }: AllocationPerformanceCardProps) {
   const [period, setPeriod] = useState<SleevePerformancePeriod>('day');
   const [ref, inView] = useInViewOnce<HTMLDivElement>();
   const [revealed, setRevealed] = useState(false);
+  const [entering, setEntering] = useState(true);
   const hasEnteredRef = useRef(false);
+  const enterTimeoutRef = useRef<number | null>(null);
   /** Keep last known % / bar so period fetches don't remount digits at 0. */
   const lastSleeveRef = useRef<Record<string, Pick<SleevePerformance, 'returnPct' | 'barHeight'>>>(
     {},
   );
-  const hasHoldings = walletTokens.length > 0 || poolPositions.length > 0;
   const { sleeves, loading, status } = useSleeveMonthPerformance(
     walletTokens,
     poolPositions,
-    isConnected && hasHoldings,
+    dataMode,
     period,
     refreshEpoch,
   );
   const note = statusNote(status, period);
 
+  // Never carry demo sleeve % into live/empty (ref survives mode switches).
+  useEffect(() => {
+    lastSleeveRef.current = {};
+  }, [dataMode]);
+
   for (const sleeve of sleeves) {
-    if (sleeve.returnPct != null) {
+    if (dataMode === 'live' && sleeve.returnPct != null) {
       lastSleeveRef.current[sleeve.id] = {
         returnPct: sleeve.returnPct,
         barHeight: sleeve.barHeight,
@@ -85,7 +85,7 @@ export function AllocationPerformanceCard({
     }
   }
 
-  // Enter animation once; period switches morph height / digits instead of replaying from 0.
+  // Enter animation once; period switches morph extent / digits instead of replaying from 0.
   useEffect(() => {
     if (!inView || loading) return;
     if (hasEnteredRef.current) {
@@ -95,6 +95,7 @@ export function AllocationPerformanceCard({
     if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
       hasEnteredRef.current = true;
       setRevealed(true);
+      setEntering(false);
       return;
     }
     setRevealed(false);
@@ -103,11 +104,16 @@ export function AllocationPerformanceCard({
       raf2 = requestAnimationFrame(() => {
         hasEnteredRef.current = true;
         setRevealed(true);
+        enterTimeoutRef.current = window.setTimeout(() => setEntering(false), ENTER_STAGGER_END_MS);
       });
     });
     return () => {
       cancelAnimationFrame(raf1);
       cancelAnimationFrame(raf2);
+      if (enterTimeoutRef.current != null) {
+        window.clearTimeout(enterTimeoutRef.current);
+        enterTimeoutRef.current = null;
+      }
     };
   }, [inView, loading]);
 
@@ -143,43 +149,37 @@ export function AllocationPerformanceCard({
         <div
           aria-busy={loading}
           aria-label={PERIOD_ARIA[period]}
-          className="healthBento__allocBars"
+          className={['healthBento__allocBars', entering ? 'is-entering' : ''].filter(Boolean).join(' ')}
           role="img"
           style={{ opacity: loading ? 0.45 : 1, transition: 'opacity 150ms ease' }}
         >
-          {sleeves.map((sleeve, index) => {
+          {sleeves.map((sleeve) => {
             const held = lastSleeveRef.current[sleeve.id];
             const returnPct = sleeve.returnPct ?? held?.returnPct ?? null;
             const extent = sleeve.returnPct != null ? sleeve.barHeight : (held?.barHeight ?? 0);
             const isFlat = returnPct != null && extent === 0;
             const isPos = extent > 0;
             const isNeg = extent < 0;
-            const halfPct = Math.round(Math.abs(extent) * 100);
-            const fillClass = ['healthBento__allocFill', revealed ? 'is-revealed' : '']
-              .filter(Boolean)
-              .join(' ');
+            const magnitude = Math.abs(extent);
+            const posExtent = revealed && isPos ? magnitude : 0;
+            const negExtent = revealed && isNeg ? magnitude : 0;
+            const fillStyle = (value: number): CSSProperties =>
+              ({ '--alloc-extent': value }) as CSSProperties;
 
             return (
               <div key={sleeve.id} className="healthBento__allocCol">
                 <VStack alignItems="center" flexGrow={1} gap={1} width="100%">
-                  <div className="healthBento__allocTrack" data-midline>
+                  <div className="healthBento__allocTrack">
                     <div className="healthBento__allocHalf healthBento__allocHalf--pos">
                       <div
-                        className={`${fillClass} healthBento__allocFill--pos`}
-                        style={{
-                          height: `${isPos ? halfPct : 0}%`,
-                          background: POS_COLORS[index % POS_COLORS.length],
-                        }}
+                        className="healthBento__allocFill healthBento__allocFill--pos"
+                        style={fillStyle(posExtent)}
                       />
                     </div>
-                    <div className="healthBento__allocMidline" aria-hidden />
                     <div className="healthBento__allocHalf healthBento__allocHalf--neg">
                       <div
-                        className={`${fillClass} healthBento__allocFill--neg`}
-                        style={{
-                          height: `${isNeg ? halfPct : 0}%`,
-                          background: NEG_COLOR,
-                        }}
+                        className="healthBento__allocFill healthBento__allocFill--neg"
+                        style={fillStyle(negExtent)}
                       />
                     </div>
                     {isFlat || (returnPct == null && !loading) ? (
@@ -196,7 +196,7 @@ export function AllocationPerformanceCard({
                   ) : (
                     <InsightsRollingNumber
                       color={
-                        returnPct < 0 ? 'fgNegative' : returnPct > 0 ? 'fg' : 'fgMuted'
+                        returnPct < 0 ? 'fgNegative' : returnPct > 0 ? 'fgPositive' : 'fgMuted'
                       }
                       font="label2"
                       formattedValue={formatSignedPct(returnPct)}

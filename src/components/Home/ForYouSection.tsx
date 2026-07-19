@@ -61,10 +61,7 @@ export const ForYouSection = ({
       return [CONNECT_VERDICT_CARD, ...DEMO_VERDICT_CARDS.slice(0, FOR_YOU_CARD_COUNT - 1)];
     }
 
-    if (verdicts.length === 0) {
-      return DEMO_VERDICT_CARDS.slice(0, 1);
-    }
-
+    // Connected: live verdicts only — never pad with demo cards.
     return verdicts.map(verdictToCard).slice(0, FOR_YOU_CARD_COUNT);
   }, [isConnected, showSkeleton, verdicts]);
 

@@ -1,8 +1,6 @@
 import { useState } from 'react';
 import { IconButton } from '@coinbase/cds-web/buttons';
-import { Box } from '@coinbase/cds-web/layout';
 import { Sidebar } from '@coinbase/cds-web/navigation';
-import { Text } from '@coinbase/cds-web/typography';
 import { CDSLogo } from '../CDSLogo';
 import { EARN_NAV, MAIN_NAV } from '../../data/navConfig';
 import { DefiNavItem } from './DefiNavItem';
@@ -11,22 +9,6 @@ type DefiSidebarProps = {
   activeIndex: number;
   onSelect: (index: number) => void;
 };
-
-function EarnSectionLabel({ collapsed }: { collapsed: boolean }) {
-  if (collapsed) return null;
-
-  return (
-    <Box paddingBottom={0.5} paddingTop={2} paddingX={2} width="100%">
-      <Text
-        color="fgMuted"
-        font="label2"
-        style={{ letterSpacing: '0.06em', textTransform: 'uppercase' }}
-      >
-        Earn
-      </Text>
-    </Box>
-  );
-}
 
 export const DefiSidebar = ({ activeIndex, onSelect }: DefiSidebarProps) => {
   const [collapsed, setCollapsed] = useState(true);
@@ -56,7 +38,6 @@ export const DefiSidebar = ({ activeIndex, onSelect }: DefiSidebarProps) => {
           onSelect={() => onSelect(index)}
         />
       ))}
-      <EarnSectionLabel collapsed={collapsed} />
       {EARN_NAV.map((entry, index) => {
         const navIndex = mainEnd + index;
         return (

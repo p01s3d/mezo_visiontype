@@ -55,4 +55,17 @@ export const DEMO_WALLET_TOKENS: WalletToken[] = [
     isCore: false,
     change24hPercent: -3.6,
   },
+  {
+    id: 'demo-uni',
+    fungibleId: 'demo-uni-fungible',
+    chain: 'ethereum',
+    name: 'Uniswap',
+    symbol: 'UNI',
+    amount: 52,
+    price: 8.17,
+    valueUsd: 424.84,
+    logoUrl: null,
+    isCore: false,
+    change24hPercent: 1.2,
+  },
 ];

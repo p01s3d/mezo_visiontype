@@ -4,7 +4,7 @@ import { Box, Fallback, HStack, VStack } from '@coinbase/cds-web/layout';
 import { Pressable } from '@coinbase/cds-web/system';
 import { Text } from '@coinbase/cds-web/typography';
 import type { ChartPeriod } from '../../api/zerion';
-import { DEMO_NET_WORTH_USD } from '../../data/demoPortfolio';
+import type { WalletDataMode } from '../../data/portfolioSnapshot';
 import { useInViewOnce } from '../../hooks/useInViewOnce';
 import { ChartPeriodSelector, chartPeriodShortLabel } from './ChartPeriodSelector';
 import { CompactLineChart } from './CompactLineChart';
@@ -46,7 +46,7 @@ const BalanceOverviewSkeleton = ({ expanded }: { expanded: boolean }) => (
 type BalanceOverviewProps = {
   totalBalanceUsd: number | null;
   loading: boolean;
-  isConnected: boolean;
+  dataMode: WalletDataMode;
   chartValues?: number[];
   /** Raw USD series for expanded Asset Price chart. */
   rawChartValues?: number[];
@@ -62,7 +62,7 @@ type BalanceOverviewProps = {
 export const BalanceOverview = ({
   totalBalanceUsd,
   loading,
-  isConnected,
+  dataMode,
   chartValues = [],
   rawChartValues = [],
   chartTimestamps = [],
@@ -73,11 +73,14 @@ export const BalanceOverview = ({
   onChartPeriodChange,
   onToggleExpanded,
 }: BalanceOverviewProps) => {
-  const displayTotal = isConnected ? (totalBalanceUsd ?? 0) : DEMO_NET_WORTH_USD;
+  const displayTotal = totalBalanceUsd ?? 0;
+  const isDemo = dataMode === 'demo';
+  const isLivePath = dataMode !== 'demo';
   const hasChart = chartValues.length >= 2;
   const expandedSeries = rawChartValues.length >= 2 ? rawChartValues : chartValues;
   const periodLabel = chartPeriodShortLabel(chartPeriod);
-  const showBalanceSkeleton = loading && isConnected;
+  // Empty (incl. clear-first Refresh) must skeleton too — only demo stays static.
+  const showBalanceSkeleton = loading && dataMode !== 'demo';
   const [rootRef, inView] = useInViewOnce<HTMLDivElement>();
   const [chartRevealed, setChartRevealed] = useState(false);
 
@@ -118,9 +121,9 @@ export const BalanceOverview = ({
           </Text>
           <RollingUsdBalance font="display2" value={displayTotal} />
           {portfolioChangePct !== null ? (
-            <HStack alignItems="center" gap={1}>
+            <HStack alignItems="center" className="balanceOverview__changeRow" gap={1}>
               <RollingPercentChange loading={chartLoading} value={portfolioChangePct} />
-              <Text color="fgMuted" font="label2">
+              <Text className="balanceOverview__changePeriod" color="fgMuted" font="label2">
                 {periodLabel}
               </Text>
             </HStack>
@@ -150,7 +153,7 @@ export const BalanceOverview = ({
               />
             </Box>
           </Pressable>
-        ) : isConnected ? (
+        ) : isLivePath && chartLoading ? (
           <Fallback
             accessibilityLabel="Loading chart"
             disableRandomRectWidth
@@ -194,7 +197,7 @@ export const BalanceOverview = ({
         </div>
       </div>
 
-      {!isConnected && !expanded ? (
+      {isDemo && !expanded ? (
         <Text color="fgMuted" font="label2">
           Sample portfolio — connect wallet to see yours
         </Text>

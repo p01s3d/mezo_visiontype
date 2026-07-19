@@ -7,6 +7,7 @@ export type DataView =
   | 'staking'
   | 'swap'
   | 'yield'
+  | 'borrow'
   | 'analytics';
 
 const DEX_PROJECTS = new Set([

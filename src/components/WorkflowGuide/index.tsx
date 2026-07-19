@@ -13,9 +13,15 @@ import {
   DEEP_DIVE_CHAPTERS,
   HERO,
   STACK_ROWS,
+  type DeepDiveChapter,
 } from './guideContent';
 import { GuideBand, GuideHero, GuideSectionHeader } from './GuideLayout';
 import { GuidePreview } from './previews';
+
+function chapterPreviews(previewKey: DeepDiveChapter['previewKey']) {
+  const keys = Array.isArray(previewKey) ? previewKey : [previewKey];
+  return keys.map((key) => <GuidePreview key={key} previewKey={key} />);
+}
 
 const MONO = 'var(--defaultFont-mono)';
 
@@ -75,7 +81,9 @@ export const WorkflowGuide = () => {
               body={chapter.body}
               chapterIndex={index + 1}
               chapterTotal={chapterTotal}
-              preview={<GuidePreview previewKey={chapter.previewKey} />}
+              previewOverflow={chapter.previewOverflow}
+              previewWidth={chapter.previewWidth}
+              previews={chapterPreviews(chapter.previewKey)}
               steps={chapter.steps}
               title={chapter.title}
             />

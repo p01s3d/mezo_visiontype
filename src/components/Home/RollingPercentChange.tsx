@@ -48,7 +48,7 @@ export function RollingPercentChange({
   const label = armed ? formatPercentChange(value) : formatPercentChange(0);
 
   return (
-    <div ref={ref}>
+    <span ref={ref} className="balanceOverview__changeValue">
       <RollingNumber
         color={color}
         digitTransitionVariant="every"
@@ -57,6 +57,6 @@ export function RollingPercentChange({
         transition={SLOW_ROLL_TRANSITION}
         value={shown}
       />
-    </div>
+    </span>
   );
 }

@@ -12,6 +12,7 @@ import {
   selectSleeveChartFungibleIds,
   type SleevePerformance,
 } from '../utils/sleevePerformance';
+import type { WalletDataMode } from '../data/portfolioSnapshot';
 import {
   clearWalletSleeveCache,
   isCacheFresh,
@@ -73,7 +74,7 @@ export function clearSleeveReturnsCache(): void {
 export function useSleeveMonthPerformance(
   walletTokens: WalletToken[],
   poolPositions: GroupedPoolPosition[],
-  enabled: boolean,
+  dataMode: WalletDataMode,
   period: SleevePerformancePeriod = 'month',
   refreshEpoch = 0,
 ): {
@@ -81,6 +82,8 @@ export function useSleeveMonthPerformance(
   loading: boolean;
   status: SleeveSnapshotStatus;
 } {
+  const hasHoldings = walletTokens.length > 0 || poolPositions.length > 0;
+  const enabled = dataMode === 'live' && hasHoldings;
   const fungibleIds = useMemo(
     () => selectSleeveChartFungibleIds(walletTokens, poolPositions, FUNGIBLE_ID_LIMIT),
     [walletTokens, poolPositions],
@@ -166,7 +169,10 @@ export function useSleeveMonthPerformance(
   }, [enabled, idKey, refreshEpoch]);
 
   const sleeves = useMemo(() => {
-    if (!enabled) return demoSleevePerformance(period);
+    if (dataMode === 'demo') return demoSleevePerformance(period);
+    if (dataMode === 'empty' || !hasHoldings) {
+      return applyPeriodBarScale(computeSleevePerformance([], []), period);
+    }
 
     if (period === 'day') {
       return applyPeriodBarScale(
@@ -180,7 +186,15 @@ export function useSleeveMonthPerformance(
       computeSleevePerformanceFromReturns(walletTokens, poolPositions, returns),
       period,
     );
-  }, [enabled, period, monthReturns, yearReturns, walletTokens, poolPositions]);
+  }, [
+    dataMode,
+    hasHoldings,
+    period,
+    monthReturns,
+    yearReturns,
+    walletTokens,
+    poolPositions,
+  ]);
 
   const loading = enabled && period !== 'day' && status === 'loading';
 

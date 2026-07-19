@@ -2,7 +2,11 @@ import type { ReactNode } from 'react';
 import { Card } from '@coinbase/cds-web/cards';
 import { Box, HStack, VStack } from '@coinbase/cds-web/layout';
 import { Text } from '@coinbase/cds-web/typography';
-import { GUIDE_PREVIEW_WIDTH } from './previewConstants';
+import {
+  GUIDE_PREVIEW_WIDTH,
+  GUIDE_SECTION_HEIGHT,
+  GUIDE_TEXT_COLUMN_WIDTH,
+} from './previewConstants';
 
 const MONO = 'var(--defaultFont-mono)';
 
@@ -10,16 +14,80 @@ type GuideDeepDiveProps = {
   body: string;
   chapterIndex: number;
   chapterTotal: number;
-  preview: ReactNode;
+  previewOverflow?: 'hidden' | 'visible';
+  previewWidth?: number;
+  previews: ReactNode[];
   steps: string[];
   title: string;
 };
+
+function GuideTextColumn({
+  body,
+  chapterLabel,
+  steps,
+  title,
+}: {
+  body: string;
+  chapterLabel: string;
+  steps: string[];
+  title: string;
+}) {
+  return (
+    <VStack gap={3} minWidth={0} width="100%">
+      <VStack gap={1} minWidth={0} width="100%">
+        <Text color="fgMuted" font="label2">
+          {chapterLabel}
+        </Text>
+        <Text font="title3">{title}</Text>
+        <Text color="fgMuted" font="body">
+          {body}
+        </Text>
+      </VStack>
+
+      <VStack gap={1} minWidth={0} width="100%">
+        <Text font="label2">How to</Text>
+        {steps.map((step, index) => (
+          <HStack key={step} alignItems="flex-start" gap={1.5} minWidth={0} width="100%">
+            <Text color="fgPrimary" font="label2" style={{ fontFamily: MONO, minWidth: 20 }}>
+              {index + 1}.
+            </Text>
+            <Text font="label2" style={{ overflowWrap: 'anywhere' }}>
+              {step}
+            </Text>
+          </HStack>
+        ))}
+      </VStack>
+    </VStack>
+  );
+}
+
+function GuidePreviewColumn({
+  previews,
+  previewOverflow = 'hidden',
+}: {
+  previews: ReactNode[];
+  previewOverflow?: 'hidden' | 'visible';
+}) {
+  return (
+    <VStack alignItems="stretch" gap={2} justifyContent="flex-start" minWidth={0} width="100%">
+      {previews.map((preview, index) => (
+        <Card key={index} borderRadius={500} overflow={previewOverflow} width="100%">
+          <Box overflow={previewOverflow} padding={1.5} width="100%">
+            {preview}
+          </Box>
+        </Card>
+      ))}
+    </VStack>
+  );
+}
 
 export function GuideDeepDive({
   body,
   chapterIndex,
   chapterTotal,
-  preview,
+  previewOverflow = 'hidden',
+  previewWidth = GUIDE_PREVIEW_WIDTH,
+  previews,
   steps,
   title,
 }: GuideDeepDiveProps) {
@@ -27,44 +95,17 @@ export function GuideDeepDive({
 
   return (
     <Box
+      alignItems="start"
       display="grid"
       gap={8}
-      style={{ gridTemplateColumns: `minmax(0, 1fr) minmax(0, ${GUIDE_PREVIEW_WIDTH}px)` }}
+      minHeight={GUIDE_SECTION_HEIGHT}
+      style={{
+        gridTemplateColumns: `minmax(0, ${GUIDE_TEXT_COLUMN_WIDTH}px) minmax(0, ${previewWidth}px)`,
+      }}
       width="100%"
     >
-      <VStack gap={3} minWidth={0} width="100%">
-        <VStack gap={1} minWidth={0} width="100%">
-          <Text color="fgMuted" font="label2">
-            {chapterLabel}
-          </Text>
-          <Text font="title3">{title}</Text>
-          <Text color="fgMuted" font="body">
-            {body}
-          </Text>
-        </VStack>
-
-        <VStack gap={1} minWidth={0} width="100%">
-          <Text font="label2">How to</Text>
-          {steps.map((step, index) => (
-            <HStack key={step} alignItems="flex-start" gap={1.5} minWidth={0} width="100%">
-              <Text color="fgPrimary" font="label2" style={{ fontFamily: MONO, minWidth: 20 }}>
-                {index + 1}.
-              </Text>
-              <Text font="label2" style={{ overflowWrap: 'anywhere' }}>
-                {step}
-              </Text>
-            </HStack>
-          ))}
-        </VStack>
-      </VStack>
-
-      <VStack alignItems="stretch" justifyContent="center" minWidth={0} width="100%">
-        <Card borderRadius={500} overflow="hidden" width="100%">
-          <Box padding={1.5} width="100%">
-            {preview}
-          </Box>
-        </Card>
-      </VStack>
+      <GuideTextColumn body={body} chapterLabel={chapterLabel} steps={steps} title={title} />
+      <GuidePreviewColumn previewOverflow={previewOverflow} previews={previews} />
     </Box>
   );
 }
