@@ -17,7 +17,6 @@ import {
   withPoolUnrealizedPnl,
 } from '../utils/poolPnl';
 import {
-  clearWalletPositionsCache,
   isCacheFresh,
   isCacheUsable,
   readJsonCache,
@@ -219,7 +218,6 @@ export function useWalletPositions(
 
       // Explicit Refresh: keep current book on screen (SWR). Only the navbar spinner moves.
       if (force) {
-        clearWalletPositionsCache(address);
         refreshingRef.current = true;
         setIsRefreshing(true);
         setError(null);

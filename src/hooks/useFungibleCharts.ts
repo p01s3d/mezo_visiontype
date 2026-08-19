@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { fetchFungibleChart, type ChartSeries } from '../api/zerion';
 import {
   clearFungibleDayChartsCache,
@@ -66,6 +66,7 @@ export function useFungibleCharts(
     return readCache(idKey)?.charts ?? {};
   });
   const [loading, setLoading] = useState(false);
+  const lastRefreshEpoch = useRef(refreshEpoch);
 
   useEffect(() => {
     if (!enabled || !idKey) {
@@ -75,10 +76,12 @@ export function useFungibleCharts(
     }
 
     const cached = readCache(idKey);
+    const forced = refreshEpoch !== lastRefreshEpoch.current;
+    lastRefreshEpoch.current = refreshEpoch;
 
     if (cached) {
       setCharts(cached.charts);
-      if (isCacheFresh(cached.fetchedAt)) {
+      if (isCacheFresh(cached.fetchedAt) && !forced) {
         setLoading(false);
         return;
       }

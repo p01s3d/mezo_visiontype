@@ -4,7 +4,6 @@ import type { LpTransaction } from '../api/walletTypes';
 import { fetchWalletLpTransactions, getZerionApiKeyIssue } from '../api/zerion';
 import type { DataSource } from '../components/AssetList';
 import {
-  clearWalletLpTxCache,
   isCacheFresh,
   isCacheUsable,
   readJsonCache,
@@ -103,7 +102,6 @@ export function useWalletLpTransactions(
 
       // Refresh keeps current txs on screen until the new list arrives.
       if (force) {
-        clearWalletLpTxCache(address);
         setError(null);
         setMissingApiKey(false);
         setApiKeyIssue(null);

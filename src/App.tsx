@@ -14,9 +14,7 @@ import { MezoApp } from './components/Mezo/MezoApp';
 import { ALL_NAV } from './data/navConfig';
 import { useDefiData } from './hooks/useDefiData';
 import { usePositionHealth } from './hooks/usePositionHealth';
-import { clearWalletChartCache, useWalletBalanceChart } from './hooks/useWalletBalanceChart';
-import { clearFungibleChartsMemory } from './hooks/useFungibleCharts';
-import { clearSleeveReturnsCache } from './hooks/useSleeveMonthPerformance';
+import { useWalletBalanceChart } from './hooks/useWalletBalanceChart';
 import { useWalletLpTransactions } from './hooks/useWalletLpTransactions';
 import { useWalletPositions } from './hooks/useWalletPositions';
 import { usePortfolioSnapshot } from './hooks/usePortfolioSnapshot';
@@ -142,8 +140,8 @@ const DashboardApp = () => {
     personalPositions: snapshot.personalPositions,
     yieldPools: pools,
     protocols,
-    // Book-only gate. DefiLlama / chart loading used to flip enabled off and wipe health
-    // (skeleton → blank). Those stay on dataLoading only.
+    // Book-only gate. Chart loading must not flip enabled off (wipes health → blank).
+    // Sticky live snapshot keeps liveBook true across Refresh.
     enabled: needsPositionHealth && liveBook && !snapshot.bookLoading,
     dataLoading: snapshot.bookLoading || loading || snapshot.balanceChart.loading,
     vsBtcPct: snapshot.bentoChart.vsBtcPct,
@@ -187,16 +185,13 @@ const DashboardApp = () => {
   }, []);
 
   const handleHomeRefresh = useCallback(() => {
-    if (address) {
-      clearWalletChartCache(address);
-    }
-    clearSleeveReturnsCache();
-    clearFungibleChartsMemory();
+    // Soft refresh: bump epoch so hooks refetch, but do not wipe in-memory charts/book.
+    // Clearing caches first was flipping the snapshot to empty and blanking the dashboard.
     setChartRefreshEpoch((n) => n + 1);
     refreshPersonal();
     refreshLpTransactions();
     health.refresh();
-  }, [address, refreshPersonal, refreshLpTransactions, health.refresh]);
+  }, [refreshPersonal, refreshLpTransactions, health.refresh]);
 
   const navbarTitle = showGuide ? 'Build a dashboard' : activeNavItem.title;
   const isDemo = snapshot.mode === 'demo';
@@ -275,7 +270,7 @@ const DashboardApp = () => {
                 dayRawTimestamps={dayChart.rawTimestamps}
                 dayRawValues={dayChart.rawPortfolioValues}
                 emptyReason={snapshot.emptyReason}
-                health={snapshot.mode === 'empty' ? null : health.health}
+                health={health.health}
                 missingApiKey={missingApiKey}
                 missingOpenRouterKey={health.missingOpenRouterKey}
                 onAllocationNavigate={handleAllocationNavigate}

@@ -1,4 +1,4 @@
-import { useMemo } from 'react';
+import { useMemo, useRef } from 'react';
 import type { Address } from 'viem';
 import type {
   GroupedPoolPosition,
@@ -31,7 +31,7 @@ type UsePortfolioSnapshotArgs = {
   bookError: string | null;
   fromCache: boolean;
   bookFetchedAt: number | null;
-  /** Explicit Navbar / Refresh clear-first in flight. */
+  /** Explicit Navbar Refresh in flight — never blank over a prior live snapshot. */
   isRefreshing?: boolean;
   balanceChart: BalanceChartState;
   bentoChart: BalanceChartState;
@@ -74,7 +74,9 @@ export function usePortfolioSnapshot({
   balanceChart,
   bentoChart,
 }: UsePortfolioSnapshotArgs): PortfolioSnapshot {
-  return useMemo(() => {
+  const lastLiveRef = useRef<PortfolioSnapshot | null>(null);
+
+  const snapshot = useMemo(() => {
     // Sample portfolio only when fully disconnected — never while a wallet session is active.
     if (!isConnected) {
       return buildDemoSnapshot({
@@ -172,4 +174,25 @@ export function usePortfolioSnapshot({
     balanceChart,
     bentoChart,
   ]);
+
+  if (snapshot.mode === 'live') {
+    lastLiveRef.current = snapshot;
+  } else if (!isConnected) {
+    lastLiveRef.current = null;
+  }
+
+  // Never blank over a known-good live book while Refresh / chart refetch is in flight.
+  if (
+    snapshot.mode === 'empty' &&
+    lastLiveRef.current &&
+    (isRefreshing || snapshot.chartLoading || snapshot.bookLoading)
+  ) {
+    return {
+      ...lastLiveRef.current,
+      bookLoading: snapshot.bookLoading,
+      chartLoading: snapshot.chartLoading || lastLiveRef.current.chartLoading,
+    };
+  }
+
+  return snapshot;
 }

@@ -67,25 +67,6 @@ type HealthScorePanelProps = {
   refreshEpoch?: number;
 };
 
-function renderInsight(text: string, highlight?: string) {
-  if (!highlight || !text.toLowerCase().includes(highlight.toLowerCase())) {
-    return text;
-  }
-  const idx = text.toLowerCase().indexOf(highlight.toLowerCase());
-  const before = text.slice(0, idx);
-  const mid = text.slice(idx, idx + highlight.length);
-  const after = text.slice(idx + highlight.length);
-  return (
-    <>
-      {before}
-      <Text color="fg" font="label2">
-        {mid}
-      </Text>
-      {after}
-    </>
-  );
-}
-
 export const HealthScorePanel = ({
   health,
   loading,
@@ -193,8 +174,6 @@ export const HealthScorePanel = ({
 
   // Always series-derived copy so the % matches the headline (AI must not invent another figure).
   const deviationCopy = deviation.narrative;
-  const dailyCopy = bentoInsights?.dailyInsight ?? daily.insight;
-  const dailyHighlight = bentoInsights?.dailyHighlight;
   const cryptoInsight = bentoInsights?.cryptoInsight ?? ruleCrypto.cryptoInsight;
   const cryptoHighlight = bentoInsights?.cryptoHighlight ?? ruleCrypto.cryptoHighlight;
 
@@ -355,11 +334,6 @@ export const HealthScorePanel = ({
                       {Math.abs(daily.periodChangePct).toFixed(2)}%
                     </Text>
                   </VStack>
-                  <Box paddingTop={1}>
-                    <Text color="fgMuted" font="label2">
-                      {renderInsight(dailyCopy, dailyHighlight)}
-                    </Text>
-                  </Box>
                   <DailyHeatmap cells={daily.cells} />
                 </>
               ) : (

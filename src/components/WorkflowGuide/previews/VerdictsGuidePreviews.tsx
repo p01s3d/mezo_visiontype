@@ -1,4 +1,4 @@
-import { Box, HStack, VStack } from '@coinbase/cds-web/layout';
+import { HStack, VStack } from '@coinbase/cds-web/layout';
 import { Text } from '@coinbase/cds-web/typography';
 import { DEMO_BENTO_CHART, DEMO_HEALTH_SCORE } from '../../../data/demoHealthScore';
 import { DEMO_POOL_POSITIONS } from '../../../data/demoPools';
@@ -127,11 +127,6 @@ export function VerdictsDailyPreview() {
             {Math.abs(daily.periodChangePct).toFixed(2)}%
           </Text>
         </VStack>
-        <Box paddingTop={1}>
-          <Text color="fgMuted" font="label2">
-            {daily.insight}
-          </Text>
-        </Box>
         <DailyHeatmap cells={daily.cells} />
       </section>
     </div>

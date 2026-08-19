@@ -364,7 +364,7 @@ export function useWalletBalanceChart(
         return;
       }
     } else {
-      // Keep last good chart on Refresh (cache was cleared); blank only when nothing to show.
+      // Keep last good chart on Refresh (cache miss); blank only when nothing to show.
       setState((prev) => {
         if (prev.fromApi && prev.rawPortfolioValues.length >= 2 && prev.period === period) {
           return { ...prev, loading: true };
@@ -388,7 +388,12 @@ export function useWalletBalanceChart(
 
         if (wallet.values.length < 2 || wallet.timestamps.length !== wallet.values.length) {
           if (!isStale) {
-            setState(emptyChartState(period, false));
+            // Keep prior series on a bad/empty response — never blank the dashboard mid-refresh.
+            setState((prev) =>
+              prev.fromApi && prev.rawPortfolioValues.length >= 2 && prev.period === period
+                ? { ...prev, loading: false }
+                : emptyChartState(period, false),
+            );
           }
           return;
         }
@@ -430,12 +435,16 @@ export function useWalletBalanceChart(
       } catch (err) {
         console.error('[useWalletBalanceChart]', err);
         if (gen !== fetchGen.current) return;
-        const latest = resolveChartCache(address, period);
-        if (latest) {
-          setState({ ...latest.state, loading: false, fromApi: true, period });
-        } else {
-          setState(emptyChartState(period, false));
-        }
+        setState((prev) => {
+          if (prev.fromApi && prev.rawPortfolioValues.length >= 2 && prev.period === period) {
+            return { ...prev, loading: false };
+          }
+          const latest = resolveChartCache(address, period);
+          if (latest) {
+            return { ...latest.state, loading: false, fromApi: true, period };
+          }
+          return emptyChartState(period, false);
+        });
       }
     })();
     // Intentionally omit totalUsd: it only seeds disconnected demo charts; refetching
@@ -443,6 +452,8 @@ export function useWalletBalanceChart(
   }, [address, isConnected, period, refreshEpoch]);
 
   // Connected path: never surface demo sparklines (fromApi false with values).
+  // Keep loading=true empties for first paint; do not clobber a prior fromApi series
+  // that React state already holds (handled above).
   if (isConnected && !state.fromApi) {
     return emptyChartState(period, state.loading);
   }

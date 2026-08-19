@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import {
   fetchFungiblePeriodChanges,
   type ChartPeriod,
@@ -104,6 +104,7 @@ export function useSleeveMonthPerformance(
     if (!cached) return 'idle';
     return isCacheFresh(cached.fetchedAt) ? 'ready' : 'cached';
   });
+  const lastRefreshEpoch = useRef(refreshEpoch);
 
   useEffect(() => {
     if (!enabled || !idKey) {
@@ -114,12 +115,14 @@ export function useSleeveMonthPerformance(
     }
 
     const cached = readCache(idKey);
+    const forced = refreshEpoch !== lastRefreshEpoch.current;
+    lastRefreshEpoch.current = refreshEpoch;
 
     if (cached) {
       setMonthReturns(cached.month);
       setYearReturns(cached.year);
-      setStatus(isCacheFresh(cached.fetchedAt) ? 'ready' : 'cached');
-      if (isCacheFresh(cached.fetchedAt)) {
+      setStatus(isCacheFresh(cached.fetchedAt) && !forced ? 'ready' : 'cached');
+      if (isCacheFresh(cached.fetchedAt) && !forced) {
         return;
       }
     } else {
