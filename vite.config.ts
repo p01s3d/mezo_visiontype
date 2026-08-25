@@ -22,7 +22,11 @@ export default defineConfig(({ mode }) => {
   const zerionProxy = zerionProxyConfig(env.VITE_ZERION_API_KEY);
 
   return {
-    base: mode === 'production' ? '/mezo_visiontype/' : '/',
+    // Only GitHub Pages needs the repo-name subpath (set via GITHUB_PAGES in
+    // deploy-pages.yml) — Vercel/Netlify/local preview all serve from root,
+    // and also build with mode "production", so keying off mode alone would
+    // break asset paths on those hosts.
+    base: process.env.GITHUB_PAGES ? '/mezo_visiontype/' : '/',
     plugins: [react()],
     server: {
       proxy: {
