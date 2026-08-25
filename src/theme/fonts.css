@@ -1,14 +1,14 @@
 @layer cds {
   :root {
     --defaultFont-sans: 'Riforma', Inter, system-ui, -apple-system, 'Segoe UI', sans-serif;
-    --defaultFont-display: 'Copernicus', 'Tiempos Headline', Garamond, 'Times New Roman', serif;
+    --defaultFont-display: 'Riforma', Inter, system-ui, -apple-system, 'Segoe UI', sans-serif;
     --defaultFont-mono: 'Riforma Mono', ui-monospace, Menlo, Consolas, monospace;
 
-    /* design-mvp chart accents (App.tsx overrides per color scheme) */
-    --chart-portfolio: #5db8a6;
-    --chart-benchmark: #e8a55a;
-    --chart-accent: #cc785c;
-    --chart-secondary: #141413;
+    /* Mezo chart accents (App.tsx overrides per color scheme) */
+    --chart-portfolio: #0188df;
+    --chart-benchmark: #f3cf8a;
+    --chart-accent: #ff004d;
+    --chart-secondary: #000000;
   }
 
   html,

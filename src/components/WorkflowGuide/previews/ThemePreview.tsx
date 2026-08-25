@@ -1,17 +1,17 @@
 import { Box, HStack, VStack } from '@coinbase/cds-web/layout';
 import { Text } from '@coinbase/cds-web/typography';
-import { COPERNICUS_DISPLAY, RIFORMA_MONO, RIFORMA_SANS } from '../../../theme/fontTokens';
+import { RIFORMA_MONO, RIFORMA_SANS } from '../../../theme/fontTokens';
 
 const SURFACES = [
-  { label: 'Canvas', hex: '#faf9f5', border: '#e6dfd8' },
-  { label: 'Card', hex: '#efe9de', border: '#e6dfd8' },
-  { label: 'Coral', hex: '#cc785c', border: '#cc785c' },
+  { label: 'Canvas', hex: '#ffffff', border: '#dddddd' },
+  { label: 'Card', hex: '#e8e8e8', border: '#dddddd' },
+  { label: 'Accent', hex: '#ff004d', border: '#ff004d' },
 ] as const;
 
 const CHART_TOKENS = [
-  { label: 'Portfolio', cssVar: '--chart-portfolio', fallback: '#5db8a6' },
-  { label: 'Benchmark', cssVar: '--chart-benchmark', fallback: '#e8a55a' },
-  { label: 'Accent', cssVar: '--chart-accent', fallback: '#cc785c' },
+  { label: 'Portfolio', cssVar: '--chart-portfolio', fallback: '#0188df' },
+  { label: 'Benchmark', cssVar: '--chart-benchmark', fallback: '#f3cf8a' },
+  { label: 'Accent', cssVar: '--chart-accent', fallback: '#ff004d' },
 ] as const;
 
 function Swatch({
@@ -97,7 +97,7 @@ export function ThemePreview() {
           padding={2}
           width="100%"
         >
-          <Text font="display2" style={{ fontFamily: COPERNICUS_DISPLAY, letterSpacing: '-0.02em' }}>
+          <Text font="display2" style={{ fontFamily: RIFORMA_SANS, letterSpacing: '-0.02em' }}>
             $12,847.52
           </Text>
           <Text font="headline" style={{ fontFamily: RIFORMA_SANS }}>
