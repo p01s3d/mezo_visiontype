@@ -1,6 +1,6 @@
 import { Box, HStack, VStack } from '@coinbase/cds-web/layout';
 import { Text } from '@coinbase/cds-web/typography';
-import { COPERNICUS_DISPLAY, JETBRAINS_MONO, STYRENE_SANS } from '../../../theme/fontTokens';
+import { COPERNICUS_DISPLAY, RIFORMA_MONO, RIFORMA_SANS } from '../../../theme/fontTokens';
 
 const SURFACES = [
   { label: 'Canvas', hex: '#faf9f5', border: '#e6dfd8' },
@@ -100,15 +100,15 @@ export function ThemePreview() {
           <Text font="display2" style={{ fontFamily: COPERNICUS_DISPLAY, letterSpacing: '-0.02em' }}>
             $12,847.52
           </Text>
-          <Text font="headline" style={{ fontFamily: STYRENE_SANS }}>
+          <Text font="headline" style={{ fontFamily: RIFORMA_SANS }}>
             My assets
           </Text>
           <Text
             color="fgMuted"
             font="label2"
-            style={{ fontFamily: JETBRAINS_MONO, fontVariantNumeric: 'tabular-nums' }}
+            style={{ fontFamily: RIFORMA_MONO, fontVariantNumeric: 'tabular-nums' }}
           >
-            +$142.30 · JetBrains Mono
+            +$142.30 · Riforma Mono
           </Text>
         </VStack>
       </VStack>

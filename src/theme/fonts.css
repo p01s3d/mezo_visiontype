@@ -1,8 +1,8 @@
 @layer cds {
   :root {
-    --defaultFont-sans: 'Styrene B', Inter, system-ui, -apple-system, 'Segoe UI', sans-serif;
+    --defaultFont-sans: 'Riforma', Inter, system-ui, -apple-system, 'Segoe UI', sans-serif;
     --defaultFont-display: 'Copernicus', 'Tiempos Headline', Garamond, 'Times New Roman', serif;
-    --defaultFont-mono: 'JetBrains Mono', ui-monospace, Menlo, Consolas, monospace;
+    --defaultFont-mono: 'Riforma Mono', ui-monospace, Menlo, Consolas, monospace;
 
     /* design-mvp chart accents (App.tsx overrides per color scheme) */
     --chart-portfolio: #5db8a6;

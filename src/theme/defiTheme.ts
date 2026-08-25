@@ -1,5 +1,5 @@
 import { defaultTheme } from '@coinbase/cds-web/themes/defaultTheme';
-import { COPERNICUS_DISPLAY, JETBRAINS_MONO, STYRENE_SANS } from './fontTokens';
+import { COPERNICUS_DISPLAY, RIFORMA_MONO, RIFORMA_SANS } from './fontTokens';
 
 /**
  * design-mvp cream + coral (Claude.com reference).
@@ -93,8 +93,8 @@ const fontWeight = {
 export const defiTheme = {
   ...defaultTheme,
   id: 'defi-cream' as const,
-  fontFamily: withFontStack(COPERNICUS_DISPLAY, STYRENE_SANS),
-  fontFamilyMono: withMonoStack(JETBRAINS_MONO),
+  fontFamily: withFontStack(COPERNICUS_DISPLAY, RIFORMA_SANS),
+  fontFamilyMono: withMonoStack(RIFORMA_MONO),
   fontWeight,
 
   lightSpectrum: {

@@ -169,10 +169,10 @@ export const DEEP_DIVE_CHAPTERS: DeepDiveChapter[] = [
   {
     id: 'theme',
     title: 'Theme — cream, coral, and type',
-    body: 'design-mvp cream surfaces with coral chrome, Copernicus display type, Styrene UI, and JetBrains tabular numbers. Chart lines use portfolio teal and BTC amber — coral is accent only. PnL stays strict green/red; bento heatmaps use soft mint and blush.',
+    body: 'design-mvp cream surfaces with coral chrome, Copernicus display type, Riforma UI, and Riforma Mono tabular numbers. Chart lines use portfolio teal and BTC amber — coral is accent only. PnL stays strict green/red; bento heatmaps use soft mint and blush.',
     steps: [
       'defiTheme.ts — extend CDS defaultTheme with cream spectrum, coral fgPrimary, and dark navy floor',
-      'fontTokens.ts + fonts.css + cream font-face imports in main.tsx — Copernicus / Styrene / JetBrains',
+      'fontTokens.ts + fonts.css + cream/riforma font-face imports in main.tsx — Copernicus / Riforma / Riforma Mono',
       'App.tsx sets --chart-portfolio, --chart-benchmark, --chart-accent per color scheme',
       'DeviationChart, health arcs, and allocation bars read chart CSS vars — not PnL polarity',
       'DailyHeatmap soft fills; fgPositive / fgNegative reserved for signed money',

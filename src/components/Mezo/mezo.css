@@ -19,8 +19,8 @@
   --ref-hs-700: #437e76;
   --ref-hs-800: #466034;
 
-  --mezo-font-sans: 'Nunito', system-ui, sans-serif;
-  --mezo-font-display: 'Fraunces', 'Iowan Old Style', Georgia, serif;
+  --mezo-font-sans: 'Riforma', Inter, system-ui, sans-serif;
+  --mezo-font-display: 'Riforma', Inter, system-ui, sans-serif;
 
   /* ── light candy: cream surfaces, gold accent, moss status, coral heat ── */
   --mezo-bg: var(--ref-db-50);

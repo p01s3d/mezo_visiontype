@@ -22,6 +22,7 @@ export default defineConfig(({ mode }) => {
   const zerionProxy = zerionProxyConfig(env.VITE_ZERION_API_KEY);
 
   return {
+    base: mode === 'production' ? '/mezo_visiontype/' : '/',
     plugins: [react()],
     server: {
       proxy: {

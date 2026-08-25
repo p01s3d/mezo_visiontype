@@ -1,5 +1,6 @@
 import '@coinbase/cds-icons/fonts/web/icon-font.css';
 import './assets/fonts/cream/font-face.css';
+import './assets/fonts/riforma/font-face.css';
 import './theme/fonts.css';
 import '@coinbase/cds-web/globalStyles';
 import { StrictMode } from 'react';
