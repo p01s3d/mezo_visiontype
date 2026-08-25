@@ -209,13 +209,13 @@ const DashboardApp = () => {
             style={
               {
                 ['--chart-portfolio' as string]:
-                  activeColorScheme === 'dark' ? '#6fc9b6' : '#5db8a6',
+                  activeColorScheme === 'dark' ? '#46b6fe' : '#0188df',
                 ['--chart-benchmark' as string]:
-                  activeColorScheme === 'dark' ? '#f0b86e' : '#e8a55a',
+                  activeColorScheme === 'dark' ? '#faecd1' : '#f3cf8a',
                 ['--chart-accent' as string]:
-                  activeColorScheme === 'dark' ? '#e08a6e' : '#cc785c',
+                  activeColorScheme === 'dark' ? '#ff004d' : '#ff004d',
                 ['--chart-secondary' as string]:
-                  activeColorScheme === 'dark' ? '#faf9f5' : '#141413',
+                  activeColorScheme === 'dark' ? '#ffffff' : '#000000',
               } as CSSProperties
             }
             width="100%"
