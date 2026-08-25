@@ -5,7 +5,6 @@ import { QuickActions } from './QuickActions';
 import { TradePanel } from './TradePanel';
 
 const TRADE_RAIL_WIDTH = 360;
-export const DASHBOARD_CONTENT_MAX_WIDTH = 950;
 const NAVBAR_HEIGHT_PX = 64;
 
 /** Match CDS Divider — theme token so dark mode isn’t stuck on light hairline. */
@@ -15,12 +14,10 @@ const VIEWPORT_BODY_MIN_HEIGHT = `calc(100vh - ${NAVBAR_HEIGHT_PX}px)`;
 
 const ROW_STYLE: CSSProperties = {
   display: 'grid',
-  // Main hugs its max width; rail sits next to it (not flush to the viewport right)
-  gridTemplateColumns: `minmax(0, ${DASHBOARD_CONTENT_MAX_WIDTH}px) 1px ${TRADE_RAIL_WIDTH}px`,
+  // Main absorbs all remaining space so the rail stays pinned to the container's right edge.
+  gridTemplateColumns: `1fr 1px ${TRADE_RAIL_WIDTH}px`,
   alignItems: 'stretch',
-  justifyContent: 'start',
-  width: 'fit-content',
-  maxWidth: '100%',
+  width: '100%',
   flex: 1,
   minHeight: VIEWPORT_BODY_MIN_HEIGHT,
 };
