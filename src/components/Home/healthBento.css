@@ -18,6 +18,11 @@
   width: 100%;
   padding: 16px;
   box-sizing: border-box;
+  /* The bento sits inside the dashboard's main column, which is narrower than the
+     viewport by the sidebar + trade rail. Query the container, not the window, so
+     the collapse fires on real available width in every sidebar/rail state. */
+  container-type: inline-size;
+  container-name: healthBento;
 }
 
 .healthBento__grid {
@@ -577,7 +582,9 @@
   }
 }
 
-@media (max-width: 900px) {
+/* 536px is the two-column floor: minmax(240px) + minmax(280px) + 16px gap. Below
+   that the tracks stop shrinking and the grid overflows, so collapse to one column. */
+@container healthBento (max-width: 535px) {
   .healthBento__grid {
     grid-template-columns: 1fr;
   }

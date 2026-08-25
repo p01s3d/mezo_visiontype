@@ -1,11 +1,22 @@
 import { Box, Divider, VStack } from '@coinbase/cds-web/layout';
 import { Text } from '@coinbase/cds-web/typography';
 import type { ReactNode, CSSProperties } from 'react';
+import { useMediaQuery } from '../../hooks/useMediaQuery';
 import { QuickActions } from './QuickActions';
 import { TradePanel } from './TradePanel';
+import { TRADE_SHEET_BAR_HEIGHT, TradeRailSheet } from './TradeRailSheet';
 
 const TRADE_RAIL_WIDTH = 360;
 const NAVBAR_HEIGHT_PX = 64;
+
+/**
+ * Below this the rail can no longer keep its 360px without starving the main
+ * column: the health bento needs 536px for its two-column layout, and main is
+ * `viewport - sidebar - rail - divider`. At 1024 that leaves main ~575px, so the
+ * rail undocks here and main takes the full width back.
+ */
+const RAIL_BREAKPOINT_PX = 1024;
+export const RAIL_COMPACT_QUERY = `(max-width: ${RAIL_BREAKPOINT_PX - 1}px)`;
 
 /** Match CDS Divider — theme token so dark mode isn’t stuck on light hairline. */
 const DIVIDER_COLOR = 'var(--color-bgLine)';
@@ -20,6 +31,12 @@ const ROW_STYLE: CSSProperties = {
   width: '100%',
   flex: 1,
   minHeight: VIEWPORT_BODY_MIN_HEIGHT,
+};
+
+/** Rail is docked to the bottom of the viewport instead of holding a column. */
+const ROW_STYLE_COMPACT: CSSProperties = {
+  ...ROW_STYLE,
+  gridTemplateColumns: '1fr',
 };
 
 const MAIN_COLUMN_STYLE: CSSProperties = {
@@ -85,18 +102,29 @@ function DashboardFooter() {
 }
 
 export function DashboardWithTradeRail({ children }: DashboardWithTradeRailProps) {
+  const compact = useMediaQuery(RAIL_COMPACT_QUERY);
+
   return (
-    <div style={ROW_STYLE}>
+    <div style={compact ? ROW_STYLE_COMPACT : ROW_STYLE}>
       <div style={MAIN_COLUMN_STYLE}>
         <VStack alignItems="stretch" gap={0} width="100%">
           {children}
         </VStack>
         <DashboardFooter />
+        {compact ? <div aria-hidden style={{ height: TRADE_SHEET_BAR_HEIGHT }} /> : null}
       </div>
-      <div aria-hidden style={DIVIDER_COLUMN_STYLE} />
-      <div style={TRADE_RAIL_COLUMN_STYLE}>
-        <TradeRail />
-      </div>
+      {compact ? (
+        <TradeRailSheet>
+          <TradeRail />
+        </TradeRailSheet>
+      ) : (
+        <>
+          <div aria-hidden style={DIVIDER_COLUMN_STYLE} />
+          <div style={TRADE_RAIL_COLUMN_STYLE}>
+            <TradeRail />
+          </div>
+        </>
+      )}
     </div>
   );
 }
